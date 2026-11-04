@@ -220,7 +220,7 @@ void RgbOpenWindow(object oPC)
     object oArmor = RgbWindowArmor(oPC);
     if (!GetIsObjectValid(oArmor))
     {
-        SendMessageToPC(oPC, "Put on some armor or clothing first.");
+        SendMessageToPC(oPC, "You must equip armor or clothing.");
         return;
     }
 

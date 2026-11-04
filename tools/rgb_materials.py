@@ -59,15 +59,19 @@ def material(part, mask=None):
     return "\n".join(lines) + "\n"
 
 
+def write_material(plt, name, out):
+    """A slot mask and a material named `name`, from one PLT."""
+    width, height, pixels = read_plt(plt)
+    (out / f"{name}_m.tga").write_bytes(mask_tga(width, height, pixels))
+    # A slot id is a category: filtering or mipmapping it mixes slots.
+    (out / f"{name}_m.txi").write_text("mipmap 0\n")
+    (out / f"{name}.mtr").write_text(material(name))
+
+
 def build(src, out):
     out.mkdir(parents=True, exist_ok=True)
     for plt in sorted(src.glob("*.plt")):
-        part = plt.stem.lower()
-        width, height, pixels = read_plt(plt)
-        (out / f"{part}_m.tga").write_bytes(mask_tga(width, height, pixels))
-        # A slot id is a category: filtering or mipmapping it mixes slots.
-        (out / f"{part}_m.txi").write_text("mipmap 0\n")
-        (out / f"{part}.mtr").write_text(material(part))
+        write_material(plt, plt.stem.lower(), out)
 
 
 def main(argv):

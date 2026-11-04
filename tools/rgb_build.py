@@ -51,7 +51,7 @@ def binary_bitmaps(data):
         if at + BITMAP_AT + FIELD > len(data):
             continue
         flags = struct.unpack_from("<I", data, at + FLAGS_AT)[0]
-        # shortcut: a flag word past 0x1000 is not a node header, so skip it.
+        # Real content flags stay under 0x1000, so a larger word is not a node.
         if flags & MESH and flags < 0x1000:
             name = data[at + BITMAP_AT:at + BITMAP_AT + FIELD].split(b"\0")[0]
             if re.fullmatch(rb"[A-Za-z0-9_]+", name):
@@ -80,17 +80,6 @@ def rename(data, text, old, new):
         return None
     head, tail = data[:HEADER], data[HEADER:]
     return head + tail.replace(old.encode() + b"\0", new.encode() + b"\0")
-
-
-def write_material(plt, material, out, mask=None):
-    if mask:
-        (out / f"{material}.mtr").write_text(rgb_materials.material(material, mask))
-        return
-    width, height, pixels = rgb_materials.read_plt(plt)
-    (out / f"{material}_m.tga").write_bytes(rgb_materials.mask_tga(width, height, pixels))
-    # A slot id is a category: filtering or mipmapping it mixes slots.
-    (out / f"{material}_m.txi").write_text("mipmap 0\n")
-    (out / f"{material}.mtr").write_text(rgb_materials.material(material))
 
 
 def build(models, plts, out):
@@ -135,13 +124,13 @@ def build(models, plts, out):
             if not own.exists():
                 # The model now names itself, so a PLT must carry that name.
                 shutil.copyfile(plts / f"{bitmap}.plt", out / f"{part}.plt")
-                write_material(None, part, out, mask=bitmap)
+                (out / f"{part}.mtr").write_text(rgb_materials.material(part, bitmap))
                 materials.add(bitmap)
                 continue
-            write_material(own, part, out)
+            rgb_materials.write_material(own, part, out)
 
     for material in sorted(materials):
-        write_material(plts / f"{material}.plt", material, out)
+        rgb_materials.write_material(plts / f"{material}.plt", material, out)
     (out / "rgb_parts.txt").write_text(json.dumps(lookup, indent=0, sort_keys=True) + "\n")
     (out / "census.txt").write_text("".join(line + "\n" for line in sorted(census)))
     return census

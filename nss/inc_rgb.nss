@@ -38,19 +38,6 @@ string RgbPartMaterial(string sPart)
     return JsonGetType(jMaterial) == JSON_TYPE_STRING ? JsonGetString(jMaterial) : sPart;
 }
 
-// The material name of oCreature's chest model.
-// A part model is named p<gender><race><phenotype>_chest<number>, for example
-// pmh0_chest007 for a human male of normal build. The race letter comes from
-// the RACE column of appearance.2da, so any playable race works.
-string RgbChestMaterial(object oCreature)
-{
-    object oArmor = GetItemInSlot(INVENTORY_SLOT_CHEST, oCreature);
-    int nModel = GetItemAppearance(oArmor, ITEM_APPR_TYPE_ARMOR_MODEL, ITEM_APPR_ARMOR_MODEL_TORSO);
-    string sGender = GetGender(oCreature) == GENDER_FEMALE ? "f" : "m";
-    string sRace = GetStringLowerCase(Get2DAString("appearance", "RACE", GetAppearanceType(oCreature)));
-    string sNumber = GetStringRight("00" + IntToString(nModel), 3);
-    return RgbPartMaterial("p" + sGender + sRace + IntToString(GetPhenoType(oCreature)) + "_chest" + sNumber);
-}
 
 // Set one slot of one part to a colour.
 // The engine only accepts a parameter the material already declares, and
@@ -164,6 +151,19 @@ float RgbParseHex(string sHex)
     return IntToFloat(nValue);
 }
 
+// Two hex digits for 0-255, the inverse of one byte of RgbParseHex.
+string RgbHexByte(int nValue)
+{
+    string sDigits = "0123456789abcdef";
+    return GetSubString(sDigits, nValue / 16, 1) + GetSubString(sDigits, nValue % 16, 1);
+}
+
+// The palette row of a preset value "p<row>".
+int RgbPresetRow(string sValue)
+{
+    return StringToInt(GetStringRight(sValue, GetStringLength(sValue) - 1));
+}
+
 // The model name of one part oCreature wears, as the engine builds it.
 string RgbPartModel(object oCreature, object oArmor, int nModel)
 {
@@ -201,9 +201,16 @@ void RgbApply(object oCreature)
             if (GetStringLeft(sValue, 1) == "#")
                 RgbSetSlot(oCreature, sMaterial, nSlot, RgbParseHex(sValue));
             else if (GetStringLeft(sValue, 1) == "p")
-                RgbSetPreset(oCreature, sMaterial, nSlot, StringToInt(GetStringRight(sValue, GetStringLength(sValue) - 1)));
+                RgbSetPreset(oCreature, sMaterial, nSlot, RgbPresetRow(sValue));
         }
     }
+}
+
+// The material of oCreature's chest model, for scripts that colour one part.
+string RgbChestMaterial(object oCreature)
+{
+    object oArmor = GetItemInSlot(INVENTORY_SLOT_CHEST, oCreature);
+    return RgbPartMaterial(RgbPartModel(oCreature, oArmor, ITEM_APPR_ARMOR_MODEL_TORSO));
 }
 
 // The player a dm_runscript call means: it may run on the module, not the player.

@@ -49,6 +49,7 @@ class ReleaseTest(unittest.TestCase):
         self.assertNotIn("census.txt", listing)
 
     def test_a_build_of_thousands_of_files_all_reach_the_hak(self):
+        # 9000 names overflow one command line, which once cut the hak short.
         archive, tmp = self.pack(extra=9000)
         zipfile.ZipFile(archive).extract("hak/rgbcolour.hak", tmp)
         listing = subprocess.run(["nwn_erf", "-f", str(tmp / "hak" / "rgbcolour.hak"), "-t"],

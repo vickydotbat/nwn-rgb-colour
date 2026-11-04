@@ -23,6 +23,21 @@ const string RGB_WINDOW_EVENTS = "rgb_window_event";
 // The part list's value for Whole outfit. Parts use their model index.
 const int RGB_WHOLE_OUTFIT = -1;
 
+// Bind names and control ids the window and its event script share. NUI
+// ignores a bind name it doesn't know, so a typo fails without an error.
+const string RGB_BIND_PART = "part";
+const string RGB_BIND_CHANNEL = "chan";
+const string RGB_BIND_MODE = "mode";
+const string RGB_BIND_COLOUR = "col";
+const string RGB_BIND_ROW = "row";
+const string RGB_BIND_ROW_LABEL = "row_label";
+const string RGB_BIND_IS_RGB = "is_rgb";
+const string RGB_BIND_IS_PRESET = "is_preset";
+const string RGB_ID_PICKER = "picker";
+const string RGB_ID_SLIDER = "slider";
+// The control a player is dragging, kept on the player.
+const string RGB_DRAG = "RGB_DRAG";
+
 // The armor the window colours.
 object RgbWindowArmor(object oPC)
 {
@@ -64,21 +79,21 @@ json RgbWindowParts(object oArmor)
 // The colours key the window's part list points at: "all" or a part key.
 string RgbWindowKey(object oPC, int nToken)
 {
-    int nPart = JsonGetInt(NuiGetBind(oPC, nToken, "part"));
+    int nPart = JsonGetInt(NuiGetBind(oPC, nToken, RGB_BIND_PART));
     return nPart == RGB_WHOLE_OUTFIT ? "all" : RgbPartKey(nPart);
 }
 
 // The channel the window points at, 1-6. The toggles count from 0.
 int RgbWindowChannel(object oPC, int nToken)
 {
-    return JsonGetInt(NuiGetBind(oPC, nToken, "chan")) + 1;
+    return JsonGetInt(NuiGetBind(oPC, nToken, RGB_BIND_CHANNEL)) + 1;
 }
 
 // Show one of the two controls, the picker or the slider.
 void RgbWindowShowMode(object oPC, int nToken, int bPreset)
 {
-    NuiSetBind(oPC, nToken, "is_rgb", JsonBool(!bPreset));
-    NuiSetBind(oPC, nToken, "is_preset", JsonBool(bPreset));
+    NuiSetBind(oPC, nToken, RGB_BIND_IS_RGB, JsonBool(!bPreset));
+    NuiSetBind(oPC, nToken, RGB_BIND_IS_PRESET, JsonBool(bPreset));
 }
 
 // Fill the controls with the stored value of the part and channel shown.
@@ -89,12 +104,12 @@ void RgbWindowLoad(object oPC, int nToken)
     json jColours = RgbGetColours(RgbWindowArmor(oPC));
     string sValue = RgbChannelValue(jColours, RgbWindowKey(oPC, nToken), RgbWindowChannel(oPC, nToken));
     int bPreset = GetStringLeft(sValue, 1) == "p";
-    int nRow = bPreset ? StringToInt(GetStringRight(sValue, GetStringLength(sValue) - 1)) : 0;
+    int nRow = bPreset ? RgbPresetRow(sValue) : 0;
     int nPacked = bPreset || sValue == "" ? 0 : FloatToInt(RgbParseHex(sValue));
-    NuiSetBind(oPC, nToken, "mode", JsonInt(bPreset));
-    NuiSetBind(oPC, nToken, "col", NuiColor(nPacked / 65536, (nPacked / 256) % 256, nPacked % 256));
-    NuiSetBind(oPC, nToken, "row", JsonInt(nRow));
-    NuiSetBind(oPC, nToken, "row_label", JsonString(IntToString(nRow)));
+    NuiSetBind(oPC, nToken, RGB_BIND_MODE, JsonInt(bPreset));
+    NuiSetBind(oPC, nToken, RGB_BIND_COLOUR, NuiColor(nPacked / 65536, (nPacked / 256) % 256, nPacked % 256));
+    NuiSetBind(oPC, nToken, RGB_BIND_ROW, JsonInt(nRow));
+    NuiSetBind(oPC, nToken, RGB_BIND_ROW_LABEL, JsonString(IntToString(nRow)));
     RgbWindowShowMode(oPC, nToken, bPreset);
 }
 
@@ -111,12 +126,6 @@ void RgbWindowStore(object oPC, int nToken, string sValue)
     RgbApply(oPC);
 }
 
-// Two hex digits for 0-255.
-string RgbHexByte(int nValue)
-{
-    string sDigits = "0123456789abcdef";
-    return GetSubString(sDigits, nValue / 16, 1) + GetSubString(sDigits, nValue % 16, 1);
-}
 
 // Open the colour window for oPC.
 void RgbOpenWindow(object oPC)
@@ -130,7 +139,7 @@ void RgbOpenWindow(object oPC)
 
     json jPart = NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
         NuiWidth(NuiLabel(JsonString("Part"), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)), 70.0)),
-        NuiCombo(RgbWindowParts(oArmor), NuiBind("part"))));
+        NuiCombo(RgbWindowParts(oArmor), NuiBind(RGB_BIND_PART))));
 
     json jChannels = JsonArray();
     int i;
@@ -138,18 +147,18 @@ void RgbOpenWindow(object oPC)
         jChannels = JsonArrayInsert(jChannels, JsonString(IntToString(i)));
     json jChannel = NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
         NuiWidth(NuiLabel(JsonString("Colour"), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)), 70.0)),
-        NuiToggles(NUI_DIRECTION_HORIZONTAL, jChannels, NuiBind("chan"))));
+        NuiToggles(NUI_DIRECTION_HORIZONTAL, jChannels, NuiBind(RGB_BIND_CHANNEL))));
 
     json jModes = JsonArrayInsert(JsonArrayInsert(JsonArray(), JsonString("RGB")), JsonString("Presets"));
     json jMode = NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
         NuiWidth(NuiLabel(JsonString("Mode"), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)), 70.0)),
-        NuiToggles(NUI_DIRECTION_HORIZONTAL, jModes, NuiBind("mode"))));
+        NuiToggles(NUI_DIRECTION_HORIZONTAL, jModes, NuiBind(RGB_BIND_MODE))));
 
-    json jPicker = NuiVisible(NuiHeight(NuiId(NuiColorPicker(NuiBind("col")), "picker"), 200.0), NuiBind("is_rgb"));
+    json jPicker = NuiVisible(NuiHeight(NuiId(NuiColorPicker(NuiBind(RGB_BIND_COLOUR)), RGB_ID_PICKER), 200.0), NuiBind(RGB_BIND_IS_RGB));
     json jSlider = NuiVisible(NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        NuiId(NuiSlider(NuiBind("row"), JsonInt(0), JsonInt(175), JsonInt(1)), "slider")),
-        NuiWidth(NuiLabel(NuiBind("row_label"), JsonInt(NUI_HALIGN_RIGHT), JsonInt(NUI_VALIGN_MIDDLE)), 50.0))),
-        NuiBind("is_preset"));
+        NuiId(NuiSlider(NuiBind(RGB_BIND_ROW), JsonInt(0), JsonInt(175), JsonInt(1)), RGB_ID_SLIDER)),
+        NuiWidth(NuiLabel(NuiBind(RGB_BIND_ROW_LABEL), JsonInt(NUI_HALIGN_RIGHT), JsonInt(NUI_VALIGN_MIDDLE)), 50.0))),
+        NuiBind(RGB_BIND_IS_PRESET));
 
     json jRoot = NuiCol(JsonArrayInsert(JsonArrayInsert(JsonArrayInsert(JsonArrayInsert(JsonArrayInsert(JsonArray(),
         jPart), jChannel), jMode), jPicker), jSlider));
@@ -157,13 +166,13 @@ void RgbOpenWindow(object oPC)
         JSON_FALSE, JSON_FALSE, JSON_TRUE, JSON_FALSE, JSON_TRUE);
 
     int nToken = NuiCreate(oPC, jWindow, RGB_WINDOW, RGB_WINDOW_EVENTS);
-    NuiSetBind(oPC, nToken, "part", JsonInt(RGB_WHOLE_OUTFIT));
-    NuiSetBind(oPC, nToken, "chan", JsonInt(0));
+    NuiSetBind(oPC, nToken, RGB_BIND_PART, JsonInt(RGB_WHOLE_OUTFIT));
+    NuiSetBind(oPC, nToken, RGB_BIND_CHANNEL, JsonInt(0));
     RgbWindowLoad(oPC, nToken);
     // Watch the controls whose changes the event script acts on.
-    NuiSetBindWatch(oPC, nToken, "part", TRUE);
-    NuiSetBindWatch(oPC, nToken, "chan", TRUE);
-    NuiSetBindWatch(oPC, nToken, "mode", TRUE);
-    NuiSetBindWatch(oPC, nToken, "col", TRUE);
-    NuiSetBindWatch(oPC, nToken, "row", TRUE);
+    NuiSetBindWatch(oPC, nToken, RGB_BIND_PART, TRUE);
+    NuiSetBindWatch(oPC, nToken, RGB_BIND_CHANNEL, TRUE);
+    NuiSetBindWatch(oPC, nToken, RGB_BIND_MODE, TRUE);
+    NuiSetBindWatch(oPC, nToken, RGB_BIND_COLOUR, TRUE);
+    NuiSetBindWatch(oPC, nToken, RGB_BIND_ROW, TRUE);
 }

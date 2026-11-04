@@ -5,7 +5,7 @@
 
 // Put a usable easel beside the entry point, once. Using it opens the colour
 // window, so a player never needs the console.
-void RgbPlaceEasel(object oPC)
+void RgbPlaceEasel()
 {
     if (GetIsObjectValid(GetObjectByTag("RGB_EASEL"))) return;
     location lHere = GetStartingLocation();
@@ -22,7 +22,7 @@ void RgbPlaceEasel(object oPC)
 void main()
 {
     object oPC = GetEnteringObject();
-    RgbPlaceEasel(oPC);
+    RgbPlaceEasel();
     // A returning player keeps their armor. Show its colours again: the
     // engine sends a creature's values to clients, and RgbApply rebuilds
     // them from the item, so they match what the item says.

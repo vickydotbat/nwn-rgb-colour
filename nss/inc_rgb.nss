@@ -22,6 +22,22 @@ float RgbPack(int nRed, int nGreen, int nBlue)
     return IntToFloat(nRed * 65536 + nGreen * 256 + nBlue);
 }
 
+// The material a part model draws with. Most parts draw their own name, but
+// many race and phenotype parts draw another body's PLT, and the build lists
+// those in rgb_parts.txt. A creature wears one body, so sharing is safe.
+string RgbPartMaterial(string sPart)
+{
+    json jParts = GetLocalJson(GetModule(), "RGB_PARTS");
+    if (JsonGetType(jParts) == JSON_TYPE_NULL)
+    {
+        // Read the list once and keep it on the module.
+        jParts = JsonParse(ResManGetFileContents("rgb_parts", RESTYPE_TXT));
+        SetLocalJson(GetModule(), "RGB_PARTS", jParts);
+    }
+    json jMaterial = JsonObjectGet(jParts, sPart);
+    return JsonGetType(jMaterial) == JSON_TYPE_STRING ? JsonGetString(jMaterial) : sPart;
+}
+
 // The material name of oCreature's chest model.
 // A part model is named p<gender><race><phenotype>_chest<number>, for example
 // pmh0_chest007 for a human male of normal build. The race letter comes from
@@ -33,7 +49,7 @@ string RgbChestMaterial(object oCreature)
     string sGender = GetGender(oCreature) == GENDER_FEMALE ? "f" : "m";
     string sRace = GetStringLowerCase(Get2DAString("appearance", "RACE", GetAppearanceType(oCreature)));
     string sNumber = GetStringRight("00" + IntToString(nModel), 3);
-    return "p" + sGender + sRace + IntToString(GetPhenoType(oCreature)) + "_chest" + sNumber;
+    return RgbPartMaterial("p" + sGender + sRace + IntToString(GetPhenoType(oCreature)) + "_chest" + sNumber);
 }
 
 // Set one slot of one part to a colour.

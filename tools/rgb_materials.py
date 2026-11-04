@@ -41,12 +41,12 @@ def mask_tga(width, height, pixels):
     return struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 24, 0) + bytes(body)
 
 
-def material(part):
+def material(part, mask=None):
     lines = [
         "customshadervs vslit",
         "customshaderfs fs_rgbpart",
         "transparency 1",
-        f"texture6 {part}_m",
+        f"texture6 {mask or part}_m",
         "parameter float rgbDebug -1",
         "parameter float rgbAtlasMode -1",
         "parameter float rgbAtlasFlip -1",

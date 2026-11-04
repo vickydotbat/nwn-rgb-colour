@@ -8,11 +8,10 @@ user=$2
 repo=$(cd "$(dirname "$0")/.." && pwd)
 build=$repo/build
 rm -rf "$build"
-mkdir -p "$build/plt" "$build/override" "$build/mod"
+mkdir -p "$build/override" "$build/mod"
 
-# Stock chest PLTs, out of the game's own data.
-nwn_resman_extract --root "$game" -p _chest -d "$build/plt" >/dev/null
-python3 "$repo/tools/rgb_materials.py" "$build/plt" --out "$build/override"
+# Every worn stock part, out of the game's own data.
+"$repo/tools/build_parts.sh" "$game" "$build/override"
 cp "$repo"/shaders/*.shd "$build/override/"
 
 # The module: scripts compiled beside their sources, GFF files from JSON.

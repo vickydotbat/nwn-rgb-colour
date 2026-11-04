@@ -26,3 +26,13 @@ compile folder="demo" out="build/ncs":
 # user folder (development/ and modules/).
 demo game user:
     tools/build_demo.sh "{{game}}" "{{user}}"
+
+# Make a builder's own PLT parts RGB-ready: a material and a slot mask
+# for each .plt in the folder, written beside it.
+convert folder:
+    python3 tools/rgb_materials.py "{{folder}}" --out "{{folder}}"
+
+# Make every worn stock part RGB-ready, from the game folder's models and
+# PLTs. census.txt in the output lists each part it skipped and why.
+build game out="build/parts":
+    tools/build_parts.sh "{{game}}" "{{out}}"

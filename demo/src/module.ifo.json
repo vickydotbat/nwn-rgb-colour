@@ -67,5 +67,13 @@
  "Mod_XPScale": {
   "type": "byte",
   "value": 10
+ },
+ "Mod_OnPlrEqItm": {
+  "type": "resref",
+  "value": "rgb_equip"
+ },
+ "Mod_OnPlrUnEqItm": {
+  "type": "resref",
+  "value": "rgb_unequip"
  }
 }

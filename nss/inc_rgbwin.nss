@@ -1,20 +1,9 @@
-// inc_rgbwin: a lean colour window, written in NWScript with NUI.
+// inc_rgbwin: a lean colour window, written in NUI. It colours the parts the
+// armor already shows and never swaps a part's model.
 //
-// The window sets the colours of the armor a player wears, for the whole
-// outfit or for one part, and stores them on the item (see inc_rgb). It never
-// swaps a part's model: it only colours what the armor already shows.
-//
-// Layout, top to bottom:
-//   Part:    a list of Whole outfit and every part the armor shows
-//   Colour:  1 to 6, the item's colours in toolset order
-//   Mode:    RGB (any colour) or Presets (a stock palette colour)
-//   a colour picker for RGB, or a grid of the stock colours for Presets
-//
-// NUI sends a "watch" event whenever a bound value changes, including when
-// the server sets it. The stock colour picker also sends one before the
-// mouse goes down, and echoes values the server set. So the window only
-// takes a picker value while the player is dragging it: a mousedown on the
-// picker starts a drag and a mouseup ends it.
+// NUI sends a "watch" event whenever a bound value changes, even when the
+// server sets it, and the stock colour picker also sends one before the mouse
+// goes down. So the window takes a picker value only while the player drags.
 #include "inc_rgb"
 #include "nw_inc_nui"
 
@@ -27,6 +16,10 @@ const int RGB_WHOLE_OUTFIT = -1;
 // ignores a bind name it doesn't know, so a typo fails without an error.
 const string RGB_BIND_PART = "part";
 const string RGB_BIND_CHANNEL = "chan";
+// The channel the window shows, 0-5, kept on the player.
+const string RGB_CHANNEL_LOCAL = "RGB_CHANNEL";
+const int RGB_CHANNELS = 6;          // colours 1 to 6
+const int RGB_MODES = 2;             // RGB, Presets
 const string RGB_BIND_MODE = "mode";
 const string RGB_BIND_COLOUR = "col";
 const string RGB_ID_PICKER = "picker";
@@ -47,8 +40,12 @@ const float RGB_PICKER = 143.0;      // the picker or the grid's height
 // The preset grid: 16 x 11 cells, one per stock colour. Each cell is
 // 18 x 13 points, matching the grid images the build writes.
 const int RGB_GRID_COLS = 16;
+const int RGB_GRID_ROWS = 11;
 const float RGB_CELL_W = 18.0;
 const float RGB_CELL_H = 13.0;
+// tools/rgb_atlas.py draws the grid images at these sizes: keep both alike.
+const float RGB_CHANNEL_BUTTON = 32.0;
+const float RGB_MODE_BUTTON = 80.0;
 const float RGB_GAP = 4.0;           // the space under each row
 const float RGB_BOTTOM = 12.0;       // room under the slot, above the frame
 // The frame around the content: the title bar on top, the border sides.
@@ -107,9 +104,9 @@ string RgbWindowKey(object oPC, int nToken)
 }
 
 // The channel the window points at, 1-6. The toggles count from 0.
-int RgbWindowChannel(object oPC, int nToken)
+int RgbWindowChannel(object oPC)
 {
-    return GetLocalInt(oPC, RGB_BIND_CHANNEL) + 1;
+    return GetLocalInt(oPC, RGB_CHANNEL_LOCAL) + 1;
 }
 
 // Fill the slot under the buttons: the picker, or the grid of stock colours
@@ -119,7 +116,8 @@ void RgbWindowShowMode(object oPC, int nToken, int bPreset)
     json jSlot;
     if (bPreset)
     {
-        string sGrid = Get2DAString("rgb_palettes", "Grid", RgbWindowChannel(oPC, nToken) - 1);
+        // rgb_palettes.2da has one row per colour, row 0 for colour 1.
+        string sGrid = Get2DAString("rgb_palettes", "Grid", RgbWindowChannel(oPC) - 1);
         jSlot = NuiImage(JsonString(sGrid), JsonInt(NUI_ASPECT_EXACT), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_TOP));
         jSlot = RgbSized(NuiId(jSlot, RGB_ID_GRID), RGB_WIN_WIDTH, RGB_PICKER);
     }
@@ -141,7 +139,26 @@ int RgbGridColour(object oPC, json jPayload)
     int nRow = FloatToInt(JsonGetFloat(JsonObjectGet(jPos, "y")) / fScale / RGB_CELL_H);
     if (nCol < 0 || nCol >= RGB_GRID_COLS || nRow < 0) return -1;
     int nColour = nRow * RGB_GRID_COLS + nCol;
-    return nColour < 176 ? nColour : -1;
+    return nColour < RGB_GRID_COLS * RGB_GRID_ROWS ? nColour : -1;
+}
+
+// A button's id and bind: the row's bind name, a dot, and the button's index.
+string RgbButtonId(string sBind, int nIndex)
+{
+    return sBind + "." + IntToString(nIndex);
+}
+
+// The row's bind name in a button id, or "" for any other id.
+string RgbButtonRowOf(string sId)
+{
+    int nDot = FindSubString(sId, ".");
+    return nDot < 0 ? "" : GetStringLeft(sId, nDot);
+}
+
+// The button's index in a button id.
+int RgbButtonIndexOf(string sId)
+{
+    return StringToInt(GetSubString(sId, FindSubString(sId, ".") + 1, 8));
 }
 
 // Light button nValue of a button row and unlight the rest.
@@ -149,7 +166,7 @@ void RgbSelectButton(object oPC, int nToken, string sBind, int nCount, int nValu
 {
     int i;
     for (i = 0; i < nCount; i++)
-        NuiSetBind(oPC, nToken, sBind + IntToString(i), JsonBool(i == nValue));
+        NuiSetBind(oPC, nToken, RgbButtonId(sBind, i), JsonBool(i == nValue));
 }
 
 // Fill the controls with the stored value of the part and channel shown.
@@ -158,10 +175,10 @@ void RgbSelectButton(object oPC, int nToken, string sBind, int nCount, int nValu
 void RgbWindowLoad(object oPC, int nToken)
 {
     json jColours = RgbGetColours(RgbWindowArmor(oPC));
-    string sValue = RgbChannelValue(jColours, RgbWindowKey(oPC, nToken), RgbWindowChannel(oPC, nToken));
+    string sValue = RgbChannelValue(jColours, RgbWindowKey(oPC, nToken), RgbWindowChannel(oPC));
     int bPreset = GetStringLeft(sValue, 1) == "p";
     int nPacked = bPreset || sValue == "" ? 0 : FloatToInt(RgbParseHex(sValue));
-    RgbSelectButton(oPC, nToken, RGB_BIND_MODE, 2, bPreset);
+    RgbSelectButton(oPC, nToken, RGB_BIND_MODE, RGB_MODES, bPreset);
     NuiSetBind(oPC, nToken, RGB_BIND_COLOUR, NuiColor(nPacked / 65536, (nPacked / 256) % 256, nPacked % 256));
     RgbWindowShowMode(oPC, nToken, bPreset);
 }
@@ -174,17 +191,23 @@ void RgbWindowStore(object oPC, int nToken, string sValue)
     string sKey = RgbWindowKey(oPC, nToken);
     json jPart = JsonObjectGet(jColours, sKey);
     if (JsonGetType(jPart) != JSON_TYPE_OBJECT) jPart = JsonObject();
-    jPart = JsonObjectSet(jPart, IntToString(RgbWindowChannel(oPC, nToken)), JsonString(sValue));
+    jPart = JsonObjectSet(jPart, IntToString(RgbWindowChannel(oPC)), JsonString(sValue));
     RgbSetColours(oArmor, JsonObjectSet(jColours, sKey, jPart));
     RgbApply(oPC);
 }
 
 
+// The label at the start of a row.
+json RgbRowLabel(string sLabel)
+{
+    return RgbSized(NuiLabel(JsonString(sLabel), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)),
+                    RGB_LABEL, RGB_ROW);
+}
+
 // A row: a label, then one control filling the rest of the width.
 json RgbFormRow(string sLabel, json jControl)
 {
-    json jLabel = RgbSized(NuiLabel(JsonString(sLabel), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)),
-                           RGB_LABEL, RGB_ROW);
+    json jLabel = RgbRowLabel(sLabel);
     json jRow = JsonArrayInsert(JsonArrayInsert(JsonArray(), jLabel),
                                 RgbSized(jControl, RGB_WIN_WIDTH - RGB_LABEL, RGB_ROW));
     return RgbSized(NuiRow(jRow), RGB_WIN_WIDTH, RGB_ROW);
@@ -195,14 +218,13 @@ json RgbFormRow(string sLabel, json jControl)
 // whole control, so the window builds its own row of fixed buttons.
 json RgbButtonRow(string sLabel, json jLabels, string sBind, float fButton)
 {
-    json jLabel = RgbSized(NuiLabel(JsonString(sLabel), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)),
-                           RGB_LABEL, RGB_ROW);
+    json jLabel = RgbRowLabel(sLabel);
     json jRow = JsonArrayInsert(JsonArray(), jLabel);
     int i;
     for (i = 0; i < JsonGetLength(jLabels); i++)
     {
-        json jButton = NuiButtonSelect(JsonArrayGet(jLabels, i), NuiBind(sBind + IntToString(i)));
-        jRow = JsonArrayInsert(jRow, RgbSized(NuiId(jButton, sBind + IntToString(i)), fButton, RGB_ROW));
+        json jButton = NuiButtonSelect(JsonArrayGet(jLabels, i), NuiBind(RgbButtonId(sBind, i)));
+        jRow = JsonArrayInsert(jRow, RgbSized(NuiId(jButton, RgbButtonId(sBind, i)), fButton, RGB_ROW));
     }
     return RgbSized(NuiRow(jRow), RGB_WIN_WIDTH, RGB_ROW);
 }
@@ -226,7 +248,7 @@ void RgbOpenWindow(object oPC)
 
     json jChannels = JsonArray();
     int i;
-    for (i = 1; i <= 6; i++)
+    for (i = 1; i <= RGB_CHANNELS; i++)
         jChannels = JsonArrayInsert(jChannels, JsonString(IntToString(i)));
     json jModes = JsonArrayInsert(JsonArrayInsert(JsonArray(), JsonString("RGB")), JsonString("Presets"));
 
@@ -238,9 +260,9 @@ void RgbOpenWindow(object oPC)
     json jColumn = JsonArray();
     jColumn = JsonArrayInsert(jColumn, RgbFormRow("Part", NuiCombo(RgbWindowParts(oArmor), NuiBind(RGB_BIND_PART))));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
-    jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Colour", jChannels, RGB_BIND_CHANNEL, 32.0));
+    jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Colour", jChannels, RGB_BIND_CHANNEL, RGB_CHANNEL_BUTTON));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
-    jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Mode", jModes, RGB_BIND_MODE, 80.0));
+    jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Mode", jModes, RGB_BIND_MODE, RGB_MODE_BUTTON));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
     jColumn = JsonArrayInsert(jColumn, jSlot);
 
@@ -257,8 +279,8 @@ void RgbOpenWindow(object oPC)
 
     int nToken = NuiCreate(oPC, jWindow, RGB_WINDOW, RGB_WINDOW_EVENTS);
     NuiSetBind(oPC, nToken, RGB_BIND_PART, JsonInt(RGB_WHOLE_OUTFIT));
-    SetLocalInt(oPC, RGB_BIND_CHANNEL, 0);
-    RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, 6, 0);
+    SetLocalInt(oPC, RGB_CHANNEL_LOCAL, 0);
+    RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, RGB_CHANNELS, 0);
     RgbWindowLoad(oPC, nToken);
     // Watch the controls whose changes the event script acts on.
     NuiSetBindWatch(oPC, nToken, RGB_BIND_PART, TRUE);

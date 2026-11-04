@@ -12,6 +12,7 @@ import unittest
 REPO = pathlib.Path(__file__).resolve().parent.parent
 TOOL = REPO / "tools" / "rgb_atlas.py"
 sys.path.insert(0, str(REPO / "tools"))
+import rgb_atlas  # noqa: E402
 import rgb_materials  # noqa: E402
 
 PALETTES = ["skin", "hair", "armor", "cloth", "leath", "tattoo"]
@@ -96,6 +97,20 @@ class AtlasTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("pal_cloth01.tga", result.stderr)
 
+    def test_a_palette_of_the_wrong_height_is_refused_by_name(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
+        for i, name in enumerate(PALETTES):
+            write_palette(tmp / f"pal_{name}01.tga", seed=i)
+        data = bytearray((tmp / "pal_hair01.tga").read_bytes())
+        data[14:16] = struct.pack("<H", ROWS - 1)
+        (tmp / "pal_hair01.tga").write_bytes(bytes(data[:18 + 256 * (ROWS - 1) * 4]))
+        result = subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")],
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pal_hair01.tga", result.stderr)
+
     def test_a_palette_with_an_id_field_reads_from_after_it(self):
         holder = tempfile.TemporaryDirectory()
         self.addCleanup(holder.cleanup)
@@ -114,14 +129,20 @@ class AtlasTest(unittest.TestCase):
         src, out = self.build()
         grid = out / "gridv_cloth01.tga"
         data = grid.read_bytes()
-        width, height = struct.unpack("<HH", data[12:14] + data[14:16])
-        self.assertEqual((width, height), (288, 143))
-        # Colour 23 is cell (column 7, row 1): 18 x 13 points each, drawn
-        # top down. The file stores its bottom line first.
-        colour, x, y = 23, 7 * 18 + 9, 1 * 13 + 6
-        line = height - 1 - y
-        pixel = tuple(data[18 + (line * width + x) * 3:18 + (line * width + x) * 3 + 3])
-        self.assertEqual(pixel, colour_row(src / "pal_cloth01.tga", colour)[188])
+        width, height = struct.unpack("<HH", data[12:16])
+        cols, cw, ch = rgb_atlas.GRID_COLS, rgb_atlas.CELL_W, rgb_atlas.CELL_H
+        self.assertEqual((width, height), (cols * cw, rgb_atlas.GRID_ROWS * ch))
+
+        def pixel(x, y):
+            # Drawn top down; the file stores its bottom line first.
+            at = 18 + ((height - 1 - y) * width + x) * 3
+            return tuple(data[at:at + 3])
+
+        for colour in (0, 23, 175):
+            x, y = (colour % cols) * cw + cw // 2, (colour // cols) * ch + ch // 2
+            expected = colour_row(src / "pal_cloth01.tga", colour)[rgb_atlas.SWATCH_INTENSITY]
+            self.assertEqual(pixel(x, y), expected, colour)
+        self.assertEqual(pixel(cw - 1, 0), rgb_atlas.BORDER)
 
     def test_there_is_a_grid_for_each_palette_a_channel_uses(self):
         _, out = self.build()
@@ -140,6 +161,14 @@ class AtlasTest(unittest.TestCase):
         subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")], check=True,
                        capture_output=True)
         self.assertEqual(stored_row(tmp / "o" / "rgb_atlas.tga", 0)[:256], stored_row(tmp / "pal_skin01.tga", 0))
+
+    def test_every_grid_the_palette_table_names_is_one_the_build_writes(self):
+        _, out = self.build()
+        table = (REPO / "data" / "rgb_palettes.2da").read_text().splitlines()
+        grids = {line.split()[2] for line in table[3:] if line.strip()}
+        self.assertEqual(len(table[3:]), 6)
+        for grid in grids:
+            self.assertTrue((out / f"{grid}.tga").exists(), grid)
 
     def test_every_part_material_binds_the_atlas(self):
         self.assertIn("texture8 rgb_atlas", rgb_materials.material("pmh0_chest001").splitlines())

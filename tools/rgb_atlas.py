@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Build the palette atlas the RGB part shader reads for preset colours.
+"""Build the palette atlas the RGB part shader reads for preset colours, and
+the preset grid images the colour window shows.
 
 The atlas stacks the six stock palettes, 176 rows each, in slot order: skin,
 hair, metal, cloth, leather, tattoo. Metal 1 and metal 2 both read the metal
@@ -9,6 +10,9 @@ rows do not fizz.
 
 Usage:
     tools/rgb_atlas.py <folder of stock pal_*01.tga> --out <folder>
+
+Writes rgb_atlas.tga and .txi, and gridv_armor01, gridv_cloth01 and
+gridv_leath01.tga.
 """
 import argparse
 import struct
@@ -17,6 +21,12 @@ from pathlib import Path
 
 PALETTES = ["skin", "hair", "armor", "cloth", "leath", "tattoo"]
 WIDTH = 256
+ROWS = 176
+
+
+def tga(width, height, body):
+    """An uncompressed 24-bit TGA with a bottom-left origin."""
+    return struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 24, 0) + body
 
 
 def read_palette(path):
@@ -27,8 +37,8 @@ def read_palette(path):
     lines bottom first, and colour c is stored line 175 - c."""
     data = path.read_bytes()
     kind, width, height, depth = data[2], *struct.unpack("<HH", data[12:16]), data[16] // 8
-    if kind != 2 or width != WIDTH or depth not in (3, 4):
-        raise ValueError(f"{path.name}: expected an uncompressed 256-wide TGA")
+    if kind != 2 or width != WIDTH or height != ROWS or depth not in (3, 4):
+        raise ValueError(f"{path.name}: expected an uncompressed 256 x 176 TGA")
     start = 18 + data[0]
     rows = []
     for r in range(height):
@@ -52,6 +62,7 @@ def averaged(row):
 # The preset grids the colour window shows: one cell per stock colour, 16
 # across and 11 down, each filled with the colour at intensity 188, as the
 # toolset's swatches look. Only the palettes an item colour uses get one.
+# nss/inc_rgbwin.nss reads clicks at these sizes: keep both alike.
 GRID_PALETTES = ["armor", "cloth", "leath"]
 GRID_COLS, GRID_ROWS = 16, 11
 CELL_W, CELL_H = 18, 13
@@ -67,11 +78,10 @@ def grid_tga(rows):
         for x in range(width):
             colour = (y // CELL_H) * GRID_COLS + x // CELL_W
             edge = x % CELL_W == CELL_W - 1 or y % CELL_H == CELL_H - 1
-            line += bytes(BORDER if edge or colour >= len(rows) else rows[colour][SWATCH_INTENSITY])
+            line += bytes(BORDER if edge else rows[colour][SWATCH_INTENSITY])
         lines.append(bytes(line))
     # A bottom-left origin TGA stores its bottom line first.
-    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 24, 0)
-    return header + b"".join(reversed(lines))
+    return tga(width, height, b"".join(reversed(lines)))
 
 
 def build(src, out):
@@ -84,8 +94,7 @@ def build(src, out):
             body += bytes((b, g, r))
     out.mkdir(parents=True, exist_ok=True)
     # Rows stored in atlas order, so the shader's row r is atlas row r.
-    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, 2 * WIDTH, len(rows), 24, 0)
-    (out / "rgb_atlas.tga").write_bytes(header + bytes(body))
+    (out / "rgb_atlas.tga").write_bytes(tga(2 * WIDTH, len(rows), bytes(body)))
     (out / "rgb_atlas.txi").write_text("mipmap 0\nfilter 0\ndownsamplemax 0\n")
     for name in GRID_PALETTES:
         (out / f"gridv_{name}01.tga").write_bytes(grid_tga(read_palette(src / f"pal_{name}01.tga")))

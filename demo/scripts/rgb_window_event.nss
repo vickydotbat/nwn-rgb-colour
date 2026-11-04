@@ -31,17 +31,17 @@ void main()
     // A colour or mode button: its id is the bind name and its index.
     if (sType == "click")
     {
-        string sBase = GetStringLeft(sElement, GetStringLength(sElement) - 1);
-        int nIndex = StringToInt(GetStringRight(sElement, 1));
+        string sBase = RgbButtonRowOf(sElement);
+        int nIndex = RgbButtonIndexOf(sElement);
         if (sBase == RGB_BIND_CHANNEL)
         {
-            SetLocalInt(oPC, RGB_BIND_CHANNEL, nIndex);
-            RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, 6, nIndex);
+            SetLocalInt(oPC, RGB_CHANNEL_LOCAL, nIndex);
+            RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, RGB_CHANNELS, nIndex);
             RgbWindowLoad(oPC, nToken);
         }
         else if (sBase == RGB_BIND_MODE)
         {
-            RgbSelectButton(oPC, nToken, RGB_BIND_MODE, 2, nIndex);
+            RgbSelectButton(oPC, nToken, RGB_BIND_MODE, RGB_MODES, nIndex);
             RgbWindowShowMode(oPC, nToken, nIndex == 1);
         }
         return;

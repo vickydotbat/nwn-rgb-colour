@@ -30,6 +30,9 @@ jobs:
           key=$(find "$RUNNER_TEMP/nwn" -name nwn_base.key | head -1)
           test -n "$key"
           echo "NWN_ROOT=$(dirname "$(dirname "$key")")" >> "$GITHUB_ENV"
+          # The compiler also wants a user folder, which a runner lacks.
+          mkdir -p "$RUNNER_TEMP/nwn-user"
+          echo "NWN_HOME=$RUNNER_TEMP/nwn-user" >> "$GITHUB_ENV"
       - name: Test
         run: nix develop -c just test
       - name: Compile

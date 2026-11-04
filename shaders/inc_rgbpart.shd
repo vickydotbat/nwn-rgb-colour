@@ -216,12 +216,12 @@ vec3 RgbTexelColour(vec4 m, vec3 baked, float intensity, float far, float span)
     return baked;
 }
 
-vec3 RgbBlended(vec3 baked, float intensity)
+// One sample of the mask at uv: the four nearest texels' finished colours,
+// blended the way the engine filters the baked PLT.
+vec3 RgbBlendedAt(vec2 uv, vec3 baked, float intensity, float far)
 {
     ivec2 size = textureSize(texUnit6, 0);
-    vec2 texels = vTexCoords.xy * vec2(size);
-    float far = clamp(max(length(dFdx(texels)), length(dFdy(texels))) - 1.0, 0.0, 1.0);
-    vec2 p = fract(vTexCoords.xy) * vec2(size) - 0.5;
+    vec2 p = fract(uv) * vec2(size) - 0.5;
     ivec2 a = ivec2(floor(p));
     vec2 f = p - floor(p);
     ivec2 lo = ivec2(0), hi = size - 1;
@@ -241,6 +241,26 @@ vec3 RgbBlended(vec3 baked, float intensity)
     vec3 c01 = RgbTexelColour(m01, baked, intensity, far, span);
     vec3 c11 = RgbTexelColour(m11, baked, intensity, far, span);
     return mix(mix(c00, c10, f.x), mix(c01, c11, f.x), f.y);
+}
+
+// The mask has no mipmaps, so a slot id stays exact. Once a pixel covers
+// more than one texel, four nearest texels no longer stand for it: which
+// four changes as the camera moves, and the colour glitters. So a far pixel
+// takes four samples spread over its footprint, on a rotated grid, and
+// averages them.
+vec3 RgbBlended(vec3 baked, float intensity)
+{
+    ivec2 size = textureSize(texUnit6, 0);
+    vec2 dx = dFdx(vTexCoords.xy), dy = dFdy(vTexCoords.xy);
+    float footprint = max(length(dx * vec2(size)), length(dy * vec2(size)));
+    float far = clamp(footprint - 1.0, 0.0, 1.0);
+    if (footprint <= 1.0)
+        return RgbBlendedAt(vTexCoords.xy, baked, intensity, far);
+    vec2 uv = vTexCoords.xy;
+    return 0.25 * (RgbBlendedAt(uv + 0.125 * dx + 0.375 * dy, baked, intensity, far)
+                 + RgbBlendedAt(uv + 0.375 * dx - 0.125 * dy, baked, intensity, far)
+                 + RgbBlendedAt(uv - 0.125 * dx - 0.375 * dy, baked, intensity, far)
+                 + RgbBlendedAt(uv - 0.375 * dx + 0.125 * dy, baked, intensity, far));
 }
 #endif
 

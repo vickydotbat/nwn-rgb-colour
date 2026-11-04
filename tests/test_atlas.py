@@ -28,6 +28,12 @@ def write_palette(path, seed):
     path.write_bytes(header + bytes(body))
 
 
+def colour_row(path, colour):
+    """Colour c of a stock palette: the c-th line from the top as a viewer
+    shows it. The palette stores its bottom line first."""
+    return stored_row(path, ROWS - 1 - colour)
+
+
 def stored_row(path, row):
     data = path.read_bytes()
     width = struct.unpack("<H", data[12:14])[0]
@@ -53,7 +59,7 @@ class AtlasTest(unittest.TestCase):
         src, out = self.build()
         cloth_base = PALETTES.index("cloth") * ROWS
         atlas = stored_row(out / "rgb_atlas.tga", cloth_base + 23)
-        self.assertEqual(atlas[:256], stored_row(src / "pal_cloth01.tga", 23))
+        self.assertEqual(atlas[:256], colour_row(src / "pal_cloth01.tga", 23))
 
     def test_the_atlas_holds_every_row_of_every_palette(self):
         _, out = self.build()
@@ -62,7 +68,7 @@ class AtlasTest(unittest.TestCase):
 
     def test_far_columns_hold_each_row_averaged(self):
         src, out = self.build()
-        row = stored_row(src / "pal_hair01.tga", 5)
+        row = colour_row(src / "pal_hair01.tga", 5)
         atlas = stored_row(out / "rgb_atlas.tga", ROWS + 5)
         # Column 256 averages columns 0 and 1; column 510 averages the row.
         pair = tuple(round((a + b) / 2) for a, b in zip(row[0], row[1]))
@@ -96,7 +102,7 @@ class AtlasTest(unittest.TestCase):
         tmp = pathlib.Path(holder.name)
         for i, name in enumerate(PALETTES):
             write_palette(tmp / f"pal_{name}01.tga", seed=i * 40)
-        plain = stored_row(tmp / "pal_skin01.tga", 0)
+        plain = colour_row(tmp / "pal_skin01.tga", 0)
         data = bytearray((tmp / "pal_skin01.tga").read_bytes())
         data[0] = 4
         (tmp / "pal_skin01.tga").write_bytes(bytes(data[:18]) + b"abcd" + bytes(data[18:]))
@@ -115,12 +121,25 @@ class AtlasTest(unittest.TestCase):
         colour, x, y = 23, 7 * 18 + 9, 1 * 13 + 6
         line = height - 1 - y
         pixel = tuple(data[18 + (line * width + x) * 3:18 + (line * width + x) * 3 + 3])
-        self.assertEqual(pixel, stored_row(src / "pal_cloth01.tga", colour)[188])
+        self.assertEqual(pixel, colour_row(src / "pal_cloth01.tga", colour)[188])
 
     def test_there_is_a_grid_for_each_palette_a_channel_uses(self):
         _, out = self.build()
         for name in ("gridv_armor01", "gridv_cloth01", "gridv_leath01"):
             self.assertTrue((out / f"{name}.tga").exists(), name)
+
+    def test_a_palette_stored_top_line_first_reads_colour_0_from_its_first_line(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
+        for i, name in enumerate(PALETTES):
+            write_palette(tmp / f"pal_{name}01.tga", seed=i * 40)
+        data = bytearray((tmp / "pal_skin01.tga").read_bytes())
+        data[17] |= 0x20
+        (tmp / "pal_skin01.tga").write_bytes(bytes(data))
+        subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")], check=True,
+                       capture_output=True)
+        self.assertEqual(stored_row(tmp / "o" / "rgb_atlas.tga", 0)[:256], stored_row(tmp / "pal_skin01.tga", 0))
 
     def test_every_part_material_binds_the_atlas(self):
         self.assertIn("texture8 rgb_atlas", rgb_materials.material("pmh0_chest001").splitlines())

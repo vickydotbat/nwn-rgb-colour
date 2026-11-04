@@ -50,6 +50,7 @@ const int RGB_GRID_COLS = 16;
 const float RGB_CELL_W = 18.0;
 const float RGB_CELL_H = 13.0;
 const float RGB_GAP = 4.0;           // the space under each row
+const float RGB_BOTTOM = 12.0;       // room under the slot, above the frame
 // The frame around the content: the title bar on top, the border sides.
 const float RGB_TITLE_BAR = 33.0;
 const float RGB_FRAME_SIDES = 20.0;
@@ -243,8 +244,9 @@ void RgbOpenWindow(object oPC)
     jColumn = JsonArrayInsert(jColumn, RgbGap());
     jColumn = JsonArrayInsert(jColumn, jSlot);
 
-    // The column holds three rows with their gaps, then the slot.
-    float fHeight = 3.0 * (RGB_ROW + RGB_GAP) + RGB_PICKER;
+    // The column holds three rows with their gaps, then the slot, then a
+    // little room so the slot doesn't touch the frame.
+    float fHeight = 3.0 * (RGB_ROW + RGB_GAP) + RGB_PICKER + RGB_BOTTOM;
     // The root is a group with scrollbars off: the window is sized to hold
     // it, so it never needs them.
     json jRoot = RgbSized(NuiGroup(RgbSized(NuiCol(jColumn), RGB_WIN_WIDTH, fHeight), FALSE, NUI_SCROLLBARS_NONE),

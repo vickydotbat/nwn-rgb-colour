@@ -20,7 +20,11 @@ WIDTH = 256
 
 
 def read_palette(path):
-    """-> rows of (b, g, r) in stored order, the order the engine uploads."""
+    """-> rows of (b, g, r), colour 0 first.
+
+    Colour c is the c-th line from the top of the palette as an image viewer
+    shows it. A stock palette has a bottom-left origin, so it stores its
+    lines bottom first, and colour c is stored line 175 - c."""
     data = path.read_bytes()
     kind, width, height, depth = data[2], *struct.unpack("<HH", data[12:16]), data[16] // 8
     if kind != 2 or width != WIDTH or depth not in (3, 4):
@@ -30,7 +34,8 @@ def read_palette(path):
     for r in range(height):
         at = start + r * width * depth
         rows.append([tuple(data[at + c * depth:at + c * depth + 3]) for c in range(width)])
-    return rows
+    # Descriptor bit 5 set means the file stores its top line first.
+    return rows if data[17] & 0x20 else rows[::-1]
 
 
 def averaged(row):

@@ -1,61 +1,20 @@
 {
- "Expansion_Pack": {
-  "type": "word",
-  "value": 3
- },
+ "__data_type": "IFO ",
  "Mod_Area_list": {
   "type": "list",
   "value": [
    {
+    "__struct_id": 6,
     "Area_Name": {
      "type": "resref",
      "value": "rgbdemo"
-    },
-    "__struct_id": 6
+    }
    }
   ]
- },
- "Mod_CacheNSSList": {
-  "type": "list",
-  "value": []
- },
- "Mod_Creator_ID": {
-  "type": "int",
-  "value": 2
- },
- "Mod_CustomTlk": {
-  "type": "cexostring",
-  "value": ""
- },
- "Mod_CutSceneList": {
-  "type": "list",
-  "value": []
- },
- "Mod_DawnHour": {
-  "type": "byte",
-  "value": 6
- },
- "Mod_Description": {
-  "type": "cexolocstring",
-  "value": {
-   "0": "Colour worn parts in any RGB colour with NWScript alone."
-  }
- },
- "Mod_DuskHour": {
-  "type": "byte",
-  "value": 18
  },
  "Mod_Entry_Area": {
   "type": "resref",
   "value": "rgbdemo"
- },
- "Mod_Entry_Dir_X": {
-  "type": "float",
-  "value": 0.9238794445991516
- },
- "Mod_Entry_Dir_Y": {
-  "type": "float",
-  "value": 0.382683664560318
  },
  "Mod_Entry_X": {
   "type": "float",
@@ -69,33 +28,13 @@
   "type": "float",
   "value": 0.0
  },
- "Mod_Expan_List": {
-  "type": "list",
-  "value": []
+ "Mod_Entry_Dir_X": {
+  "type": "float",
+  "value": 0.0
  },
- "Mod_GVar_List": {
-  "type": "list",
-  "value": []
- },
- "Mod_HakList": {
-  "type": "list",
-  "value": []
- },
- "Mod_ID": {
-  "type": "void",
-  "value64": "AAAAAAAAAAAAAAAAAAAAAA=="
- },
- "Mod_IsSaveGame": {
-  "type": "byte",
-  "value": 0
- },
- "Mod_MinGameVer": {
-  "type": "cexostring",
-  "value": "1.77"
- },
- "Mod_MinPerHour": {
-  "type": "byte",
-  "value": 2
+ "Mod_Entry_Dir_Y": {
+  "type": "float",
+  "value": -1.0
  },
  "Mod_Name": {
   "type": "cexolocstring",
@@ -103,109 +42,30 @@
    "0": "RGB colour demo"
   }
  },
- "Mod_OnAcquirItem": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnActvtItem": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnClientEntr": {
-  "type": "resref",
-  "value": "rgb_enter"
- },
- "Mod_OnClientLeav": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnCutsnAbort": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnHeartbeat": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnModLoad": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnModStart": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrChat": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrDeath": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrDying": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrEqItm": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrLvlUp": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrRest": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnPlrUnEqItm": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnSpawnBtnDn": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnUnAqreItem": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_OnUsrDefined": {
-  "type": "resref",
-  "value": ""
- },
- "Mod_StartDay": {
-  "type": "byte",
-  "value": 1
- },
- "Mod_StartHour": {
-  "type": "byte",
-  "value": 13
- },
- "Mod_StartMonth": {
-  "type": "byte",
-  "value": 6
- },
- "Mod_StartMovie": {
-  "type": "resref",
-  "value": "prelude"
- },
- "Mod_StartYear": {
-  "type": "dword",
-  "value": 1372
+ "Mod_Description": {
+  "type": "cexolocstring",
+  "value": {
+   "0": "Colour worn parts in any RGB colour, with NWScript alone."
+  }
  },
  "Mod_Tag": {
   "type": "cexostring",
   "value": "rgbdemo"
  },
- "Mod_Version": {
-  "type": "dword",
-  "value": 3
+ "Mod_HakList": {
+  "type": "list",
+  "value": []
+ },
+ "Mod_MinGameVer": {
+  "type": "cexostring",
+  "value": "1.69"
+ },
+ "Mod_OnClientEntr": {
+  "type": "resref",
+  "value": "rgb_enter"
  },
  "Mod_XPScale": {
   "type": "byte",
   "value": 10
- },
- "__data_type": "IFO "
+ }
 }

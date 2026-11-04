@@ -1,27 +1,29 @@
 {
+ "__data_type": "GIT ",
  "AreaProperties": {
   "__struct_id": 100,
   "type": "struct",
   "value": {
+   "__struct_id": 100,
    "AmbientSndDay": {
     "type": "int",
-    "value": 68
-   },
-   "AmbientSndDayVol": {
-    "type": "int",
-    "value": 31
+    "value": 0
    },
    "AmbientSndNight": {
     "type": "int",
-    "value": 68
+    "value": 0
+   },
+   "AmbientSndDayVol": {
+    "type": "int",
+    "value": 0
    },
    "AmbientSndNitVol": {
     "type": "int",
-    "value": 31
+    "value": 0
    },
    "EnvAudio": {
     "type": "int",
-    "value": 28
+    "value": 0
    },
    "MusicBattle": {
     "type": "int",
@@ -29,17 +31,16 @@
    },
    "MusicDay": {
     "type": "int",
-    "value": 29
-   },
-   "MusicDelay": {
-    "type": "int",
-    "value": 120000
+    "value": 0
    },
    "MusicNight": {
     "type": "int",
-    "value": 29
+    "value": 0
    },
-   "__struct_id": 100
+   "MusicDelay": {
+    "type": "int",
+    "value": 0
+   }
   }
  },
  "Creature List": {
@@ -77,6 +78,5 @@
  "WaypointList": {
   "type": "list",
   "value": []
- },
- "__data_type": "GIT "
+ }
 }

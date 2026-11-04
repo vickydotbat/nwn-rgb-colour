@@ -1,4 +1,5 @@
 {
+ "__data_type": "GIC ",
  "Creature List": {
   "type": "list",
   "value": []
@@ -34,6 +35,5 @@
  "WaypointList": {
   "type": "list",
   "value": []
- },
- "__data_type": "GIC "
+ }
 }

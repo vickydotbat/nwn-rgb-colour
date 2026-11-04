@@ -1,83 +1,12 @@
 {
- "ChanceLightning": {
-  "type": "int",
-  "value": 0
+ "__data_type": "ARE ",
+ "ResRef": {
+  "type": "resref",
+  "value": "rgbdemo"
  },
- "ChanceRain": {
-  "type": "int",
-  "value": 0
- },
- "ChanceSnow": {
-  "type": "int",
-  "value": 0
- },
- "Comments": {
+ "Tag": {
   "type": "cexostring",
-  "value": ""
- },
- "Creator_ID": {
-  "type": "int",
-  "value": -842150451
- },
- "DayNightCycle": {
-  "type": "byte",
-  "value": 0
- },
- "Expansion_List": {
-  "type": "list",
-  "value": []
- },
- "Flags": {
-  "type": "dword",
-  "value": 1
- },
- "Height": {
-  "type": "int",
-  "value": 2
- },
- "ID": {
-  "type": "int",
-  "value": -842150451
- },
- "IsNight": {
-  "type": "byte",
-  "value": 0
- },
- "LightingScheme": {
-  "type": "byte",
-  "value": 0
- },
- "LoadScreenID": {
-  "type": "word",
-  "value": 0
- },
- "ModListenCheck": {
-  "type": "int",
-  "value": 0
- },
- "ModSpotCheck": {
-  "type": "int",
-  "value": 0
- },
- "MoonAmbientColor": {
-  "type": "dword",
-  "value": 2697513
- },
- "MoonDiffuseColor": {
-  "type": "dword",
-  "value": 0
- },
- "MoonFogAmount": {
-  "type": "byte",
-  "value": 0
- },
- "MoonFogColor": {
-  "type": "dword",
-  "value": 0
- },
- "MoonShadows": {
-  "type": "byte",
-  "value": 0
+  "value": "rgbdemo"
  },
  "Name": {
   "type": "cexolocstring",
@@ -85,37 +14,214 @@
    "0": "RGB colour demo"
   }
  },
- "NoRest": {
+ "Tileset": {
+  "type": "resref",
+  "value": "tic01"
+ },
+ "Width": {
+  "type": "int",
+  "value": 2
+ },
+ "Height": {
+  "type": "int",
+  "value": 2
+ },
+ "Tile_List": {
+  "type": "list",
+  "value": [
+   {
+    "__struct_id": 1,
+    "Tile_ID": {
+     "type": "int",
+     "value": 36
+    },
+    "Tile_Orientation": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_Height": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_MainLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_MainLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_AnimLoop1": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop2": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop3": {
+     "type": "byte",
+     "value": 1
+    }
+   },
+   {
+    "__struct_id": 1,
+    "Tile_ID": {
+     "type": "int",
+     "value": 36
+    },
+    "Tile_Orientation": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_Height": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_MainLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_MainLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_AnimLoop1": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop2": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop3": {
+     "type": "byte",
+     "value": 1
+    }
+   },
+   {
+    "__struct_id": 1,
+    "Tile_ID": {
+     "type": "int",
+     "value": 36
+    },
+    "Tile_Orientation": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_Height": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_MainLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_MainLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_AnimLoop1": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop2": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop3": {
+     "type": "byte",
+     "value": 1
+    }
+   },
+   {
+    "__struct_id": 1,
+    "Tile_ID": {
+     "type": "int",
+     "value": 36
+    },
+    "Tile_Orientation": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_Height": {
+     "type": "int",
+     "value": 0
+    },
+    "Tile_MainLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_MainLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight1": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_SrcLight2": {
+     "type": "byte",
+     "value": 0
+    },
+    "Tile_AnimLoop1": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop2": {
+     "type": "byte",
+     "value": 1
+    },
+    "Tile_AnimLoop3": {
+     "type": "byte",
+     "value": 1
+    }
+   }
+  ]
+ },
+ "Flags": {
+  "type": "dword",
+  "value": 1
+ },
+ "Version": {
+  "type": "dword",
+  "value": 1
+ },
+ "IsNight": {
   "type": "byte",
   "value": 0
  },
- "OnEnter": {
-  "type": "resref",
-  "value": ""
- },
- "OnExit": {
-  "type": "resref",
-  "value": ""
- },
- "OnHeartbeat": {
-  "type": "resref",
-  "value": ""
- },
- "OnUserDefined": {
-  "type": "resref",
-  "value": ""
- },
- "PlayerVsPlayer": {
+ "DayNightCycle": {
   "type": "byte",
-  "value": 3
+  "value": 0
  },
- "ResRef": {
-  "type": "resref",
-  "value": "rgbdemo"
- },
- "ShadowOpacity": {
+ "LightingScheme": {
   "type": "byte",
-  "value": 50
+  "value": 0
  },
  "SunAmbientColor": {
   "type": "dword",
@@ -125,214 +231,80 @@
   "type": "dword",
   "value": 16777215
  },
- "SunFogAmount": {
-  "type": "byte",
-  "value": 15
- },
  "SunFogColor": {
   "type": "dword",
   "value": 0
  },
- "SunShadows": {
+ "SunFogAmount": {
   "type": "byte",
   "value": 0
  },
- "Tag": {
-  "type": "cexostring",
-  "value": "rgbdemo"
+ "SunShadows": {
+  "type": "byte",
+  "value": 1
  },
- "Tile_List": {
-  "type": "list",
-  "value": [
-   {
-    "Tile_AnimLoop1": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop2": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop3": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_Height": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_ID": {
-     "type": "int",
-     "value": 36
-    },
-    "Tile_MainLight1": {
-     "type": "byte",
-     "value": 28
-    },
-    "Tile_MainLight2": {
-     "type": "byte",
-     "value": 0
-    },
-    "Tile_Orientation": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_SrcLight1": {
-     "type": "byte",
-     "value": 2
-    },
-    "Tile_SrcLight2": {
-     "type": "byte",
-     "value": 2
-    },
-    "__struct_id": 1
-   },
-   {
-    "Tile_AnimLoop1": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop2": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop3": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_Height": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_ID": {
-     "type": "int",
-     "value": 36
-    },
-    "Tile_MainLight1": {
-     "type": "byte",
-     "value": 28
-    },
-    "Tile_MainLight2": {
-     "type": "byte",
-     "value": 0
-    },
-    "Tile_Orientation": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_SrcLight1": {
-     "type": "byte",
-     "value": 2
-    },
-    "Tile_SrcLight2": {
-     "type": "byte",
-     "value": 2
-    },
-    "__struct_id": 1
-   },
-   {
-    "Tile_AnimLoop1": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop2": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop3": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_Height": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_ID": {
-     "type": "int",
-     "value": 36
-    },
-    "Tile_MainLight1": {
-     "type": "byte",
-     "value": 28
-    },
-    "Tile_MainLight2": {
-     "type": "byte",
-     "value": 0
-    },
-    "Tile_Orientation": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_SrcLight1": {
-     "type": "byte",
-     "value": 2
-    },
-    "Tile_SrcLight2": {
-     "type": "byte",
-     "value": 2
-    },
-    "__struct_id": 1
-   },
-   {
-    "Tile_AnimLoop1": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop2": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_AnimLoop3": {
-     "type": "byte",
-     "value": 1
-    },
-    "Tile_Height": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_ID": {
-     "type": "int",
-     "value": 36
-    },
-    "Tile_MainLight1": {
-     "type": "byte",
-     "value": 28
-    },
-    "Tile_MainLight2": {
-     "type": "byte",
-     "value": 0
-    },
-    "Tile_Orientation": {
-     "type": "int",
-     "value": 0
-    },
-    "Tile_SrcLight1": {
-     "type": "byte",
-     "value": 2
-    },
-    "Tile_SrcLight2": {
-     "type": "byte",
-     "value": 2
-    },
-    "__struct_id": 1
-   }
-  ]
- },
- "Tileset": {
-  "type": "resref",
-  "value": "tic01"
- },
- "Version": {
+ "MoonAmbientColor": {
   "type": "dword",
-  "value": 3452816984
+  "value": 4210752
  },
- "Width": {
+ "MoonDiffuseColor": {
+  "type": "dword",
+  "value": 8421504
+ },
+ "MoonFogColor": {
+  "type": "dword",
+  "value": 0
+ },
+ "MoonFogAmount": {
+  "type": "byte",
+  "value": 0
+ },
+ "MoonShadows": {
+  "type": "byte",
+  "value": 0
+ },
+ "ShadowOpacity": {
+  "type": "byte",
+  "value": 40
+ },
+ "ChanceRain": {
   "type": "int",
-  "value": 2
+  "value": 0
+ },
+ "ChanceSnow": {
+  "type": "int",
+  "value": 0
+ },
+ "ChanceLightning": {
+  "type": "int",
+  "value": 0
  },
  "WindPower": {
   "type": "int",
   "value": 0
  },
- "__data_type": "ARE "
+ "LoadScreenID": {
+  "type": "word",
+  "value": 0
+ },
+ "NoRest": {
+  "type": "byte",
+  "value": 0
+ },
+ "PlayerVsPlayer": {
+  "type": "byte",
+  "value": 0
+ },
+ "ModSpotCheck": {
+  "type": "int",
+  "value": 0
+ },
+ "ModListenCheck": {
+  "type": "int",
+  "value": 0
+ },
+ "Expansion_List": {
+  "type": "list",
+  "value": []
+ }
 }

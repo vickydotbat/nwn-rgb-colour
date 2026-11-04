@@ -127,6 +127,42 @@ void RgbWindowStore(object oPC, int nToken, string sValue)
 }
 
 
+// Window sizes, in points. The client draws a window at exactly the size it
+// is given and never shrinks it to fit. So every element gets a width, a
+// height, and no margin or padding: the engine adds a default margin on top
+// of a declared size, and a row sized to fit its children then can't hold
+// them. A row's children are as tall as the row.
+const float RGB_WIN_WIDTH = 300.0;   // the content, inside the frame
+const float RGB_ROW = 28.0;          // one row of controls
+const float RGB_LABEL = 60.0;        // the label column
+const float RGB_PICKER = 140.0;      // the colour picker's height
+const float RGB_GAP = 4.0;           // the space under each row
+// The frame around the content: the title bar on top, the border sides.
+const float RGB_TITLE_BAR = 33.0;
+const float RGB_FRAME_SIDES = 20.0;
+
+// An element at exactly w x h, with no margin or padding.
+json RgbSized(json jElem, float fWidth, float fHeight)
+{
+    return NuiPadding(NuiMargin(NuiHeight(NuiWidth(jElem, fWidth), fHeight), 0.0), 0.0);
+}
+
+// A row: a label, then one control filling the rest of the width.
+json RgbFormRow(string sLabel, json jControl)
+{
+    json jLabel = RgbSized(NuiLabel(JsonString(sLabel), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)),
+                           RGB_LABEL, RGB_ROW);
+    json jRow = JsonArrayInsert(JsonArrayInsert(JsonArray(), jLabel),
+                                RgbSized(jControl, RGB_WIN_WIDTH - RGB_LABEL, RGB_ROW));
+    return RgbSized(NuiRow(jRow), RGB_WIN_WIDTH, RGB_ROW);
+}
+
+// A gap of RGB_GAP between two rows.
+json RgbGap()
+{
+    return RgbSized(NuiSpacer(), RGB_WIN_WIDTH, RGB_GAP);
+}
+
 // Open the colour window for oPC.
 void RgbOpenWindow(object oPC)
 {
@@ -137,32 +173,38 @@ void RgbOpenWindow(object oPC)
         return;
     }
 
-    json jPart = NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        NuiWidth(NuiLabel(JsonString("Part"), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)), 70.0)),
-        NuiCombo(RgbWindowParts(oArmor), NuiBind(RGB_BIND_PART))));
-
     json jChannels = JsonArray();
     int i;
     for (i = 1; i <= 6; i++)
         jChannels = JsonArrayInsert(jChannels, JsonString(IntToString(i)));
-    json jChannel = NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        NuiWidth(NuiLabel(JsonString("Colour"), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)), 70.0)),
-        NuiToggles(NUI_DIRECTION_HORIZONTAL, jChannels, NuiBind(RGB_BIND_CHANNEL))));
-
     json jModes = JsonArrayInsert(JsonArrayInsert(JsonArray(), JsonString("RGB")), JsonString("Presets"));
-    json jMode = NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        NuiWidth(NuiLabel(JsonString("Mode"), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)), 70.0)),
-        NuiToggles(NUI_DIRECTION_HORIZONTAL, jModes, NuiBind(RGB_BIND_MODE))));
 
-    json jPicker = NuiVisible(NuiHeight(NuiId(NuiColorPicker(NuiBind(RGB_BIND_COLOUR)), RGB_ID_PICKER), 200.0), NuiBind(RGB_BIND_IS_RGB));
-    json jSlider = NuiVisible(NuiRow(JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        NuiId(NuiSlider(NuiBind(RGB_BIND_ROW), JsonInt(0), JsonInt(175), JsonInt(1)), RGB_ID_SLIDER)),
-        NuiWidth(NuiLabel(NuiBind(RGB_BIND_ROW_LABEL), JsonInt(NUI_HALIGN_RIGHT), JsonInt(NUI_VALIGN_MIDDLE)), 50.0))),
-        NuiBind(RGB_BIND_IS_PRESET));
+    // The picker and the slider row share one slot: only one shows at a time.
+    json jPicker = NuiVisible(RgbSized(NuiId(NuiColorPicker(NuiBind(RGB_BIND_COLOUR)), RGB_ID_PICKER),
+                                       RGB_WIN_WIDTH, RGB_PICKER), NuiBind(RGB_BIND_IS_RGB));
+    json jSliderRow = JsonArrayInsert(JsonArrayInsert(JsonArray(),
+        RgbSized(NuiId(NuiSlider(NuiBind(RGB_BIND_ROW), JsonInt(0), JsonInt(175), JsonInt(1)), RGB_ID_SLIDER),
+                 RGB_WIN_WIDTH - RGB_LABEL, RGB_ROW)),
+        RgbSized(NuiLabel(NuiBind(RGB_BIND_ROW_LABEL), JsonInt(NUI_HALIGN_RIGHT), JsonInt(NUI_VALIGN_MIDDLE)),
+                 RGB_LABEL, RGB_ROW));
+    json jSlider = NuiVisible(RgbSized(NuiRow(jSliderRow), RGB_WIN_WIDTH, RGB_ROW), NuiBind(RGB_BIND_IS_PRESET));
 
-    json jRoot = NuiCol(JsonArrayInsert(JsonArrayInsert(JsonArrayInsert(JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        jPart), jChannel), jMode), jPicker), jSlider));
-    json jWindow = NuiWindow(jRoot, JsonString("Colours"), NuiRect(-1.0, -1.0, 360.0, 400.0),
+    json jColumn = JsonArray();
+    jColumn = JsonArrayInsert(jColumn, RgbFormRow("Part", NuiCombo(RgbWindowParts(oArmor), NuiBind(RGB_BIND_PART))));
+    jColumn = JsonArrayInsert(jColumn, RgbGap());
+    jColumn = JsonArrayInsert(jColumn, RgbFormRow("Colour", NuiToggles(NUI_DIRECTION_HORIZONTAL, jChannels, NuiBind(RGB_BIND_CHANNEL))));
+    jColumn = JsonArrayInsert(jColumn, RgbGap());
+    jColumn = JsonArrayInsert(jColumn, RgbFormRow("Mode", NuiToggles(NUI_DIRECTION_HORIZONTAL, jModes, NuiBind(RGB_BIND_MODE))));
+    jColumn = JsonArrayInsert(jColumn, RgbGap());
+    jColumn = JsonArrayInsert(jColumn, jPicker);
+    jColumn = JsonArrayInsert(jColumn, jSlider);
+
+    // The column holds three rows with their gaps, then the picker or the
+    // slider. Hidden or not, both keep their place, so count both.
+    float fHeight = 3.0 * (RGB_ROW + RGB_GAP) + RGB_PICKER + RGB_ROW;
+    json jRoot = RgbSized(NuiCol(jColumn), RGB_WIN_WIDTH, fHeight);
+    json jGeometry = NuiRect(-1.0, -1.0, RGB_WIN_WIDTH + RGB_FRAME_SIDES, fHeight + RGB_TITLE_BAR);
+    json jWindow = NuiWindow(jRoot, JsonString("Colours"), jGeometry,
         JSON_FALSE, JSON_FALSE, JSON_TRUE, JSON_FALSE, JSON_TRUE);
 
     int nToken = NuiCreate(oPC, jWindow, RGB_WINDOW, RGB_WINDOW_EVENTS);

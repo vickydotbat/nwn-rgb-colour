@@ -1,5 +1,7 @@
-// The colour window's event script. NUI runs it for every event the window
-// sends: a watched bind that changed, a mouse press, the window closing.
+// The colour window's event script, run as the module's OnNuiEvent script
+// for every NUI event: a watched bind that changed, a mouse press, the
+// window closing. A module with its own NUI script runs this one from it
+// with ExecuteScript("rgb_window_event") for events from "rgb_window".
 #include "inc_rgbwin"
 
 void main()
@@ -8,6 +10,8 @@ void main()
     int nToken = NuiGetEventWindow();
     string sType = NuiGetEventType();
     string sElement = NuiGetEventElement();
+    // The module's NUI script hears every window. This one answers its own.
+    if (NuiGetWindowId(oPC, nToken) != RGB_WINDOW) return;
 
     // Closing the window, or taking off the armor it colours, ends it. With
     // no armor every store would write to nothing.

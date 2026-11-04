@@ -166,8 +166,12 @@ class BuildTest(unittest.TestCase):
                              ["pmh0_chest001"])
         self.assertFalse((out / "pmd0_chest001.mdl").exists())
         self.assertFalse((out / "pmd0_chest001.mtr").exists())
-        lookup = json.loads((out / "rgb_parts.txt").read_text())
-        self.assertEqual(lookup["pmd0_chest001"], "pmh0_chest001")
+        # A 2da, which every game version's scripts can read.
+        lines = (out / "rgb_parts.2da").read_text().splitlines()
+        self.assertEqual(lines[0].strip(), "2DA V2.0")
+        self.assertEqual(lines[2].split(), ["Part", "Material"])
+        rows = {cols[1]: cols[2] for cols in (line.split() for line in lines[3:] if line.strip())}
+        self.assertEqual(rows["pmd0_chest001"], "pmh0_chest001")
 
     def test_a_split_part_with_no_plt_of_its_own_gets_a_copy(self):
         out = self.run_build({"pmh0_shinl002": "pmh0_shinl002", "pmh0_shinr002": "pmh0_shinl002"},

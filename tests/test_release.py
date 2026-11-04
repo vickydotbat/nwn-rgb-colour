@@ -22,7 +22,7 @@ class ReleaseTest(unittest.TestCase):
         tmp = pathlib.Path(holder.name)
         override = tmp / "override"
         override.mkdir()
-        for name in ("pmh0_chest001.mtr", "pmh0_chest001_m.tga", "rgb_atlas.tga", "fs_rgbpart.shd", "rgb_parts.txt"):
+        for name in ("pmh0_chest001.mtr", "pmh0_chest001_m.tga", "rgb_atlas.tga", "fs_rgbpart.shd", "rgb_parts.2da"):
             (override / name).write_bytes(b"x")
         for i in range(extra):
             (override / f"pmh0_shin{i:07d}.mtr").write_bytes(b"x")
@@ -53,7 +53,7 @@ class ReleaseTest(unittest.TestCase):
         zipfile.ZipFile(archive).extract("hak/rgbcolour.hak", tmp)
         listing = subprocess.run(["nwn_erf", "-f", str(tmp / "hak" / "rgbcolour.hak"), "-t"],
                                  capture_output=True, text=True, check=True).stdout.split()
-        for name in ("pmh0_chest001.mtr", "pmh0_chest001_m.tga", "rgb_atlas.tga", "fs_rgbpart.shd", "rgb_parts.txt"):
+        for name in ("pmh0_chest001.mtr", "pmh0_chest001_m.tga", "rgb_atlas.tga", "fs_rgbpart.shd", "rgb_parts.2da"):
             self.assertIn(name, listing)
         self.assertNotIn("census.txt", listing)
 

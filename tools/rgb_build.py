@@ -10,8 +10,8 @@ Two parts of one body that draw the same bitmap would colour together, as
 when a stock right shin draws the left shin's PLT. The build gives each such
 part a model copy that names itself, and a PLT of its own when it lacks one.
 
-rgb_parts.txt maps every part whose material is not its own name to that
-material, as JSON, for the scripts. census.txt lists each part it skipped.
+rgb_parts.2da maps every part whose material is not its own name to that
+material, for the scripts. census.txt lists each part it skipped.
 
 Models may be ASCII or compiled. A compiled model is read and renamed in
 place, which works for names of the same length, as left and right are.
@@ -20,7 +20,6 @@ Usage:
     tools/rgb_build.py <models folder> <plt folder> --out <folder>
 """
 import argparse
-import json
 import re
 import shutil
 import struct
@@ -131,7 +130,8 @@ def build(models, plts, out):
 
     for material in sorted(materials):
         rgb_materials.write_material(plts / f"{material}.plt", material, out)
-    (out / "rgb_parts.txt").write_text(json.dumps(lookup, indent=0, sort_keys=True) + "\n")
+    rows = "".join(f"{i:<6}{part:<16} {material}\n" for i, (part, material) in enumerate(sorted(lookup.items())))
+    (out / "rgb_parts.2da").write_text("2DA V2.0\n\n      Part             Material\n" + rows)
     (out / "census.txt").write_text("".join(line + "\n" for line in sorted(census)))
     return census
 

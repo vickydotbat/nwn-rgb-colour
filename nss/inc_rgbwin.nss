@@ -297,7 +297,13 @@ void RgbOpenWindow(object oPC)
     json jWindow = NuiWindow(jRoot, JsonString("Colours"), jGeometry,
         JSON_FALSE, JSON_FALSE, JSON_TRUE, JSON_FALSE, JSON_TRUE);
 
-    int nToken = NuiCreate(oPC, jWindow, RGB_WINDOW, RGB_WINDOW_EVENTS);
+    // NUI sends a window's events to the module's OnNuiEvent script. Take
+    // that slot only when the module has no handler of its own; a module
+    // that has one runs rgb_window_event from it (see the docs).
+    object oModule = GetModule();
+    if (GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_NUI_EVENT) == "")
+        SetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_NUI_EVENT, RGB_WINDOW_EVENTS);
+    int nToken = NuiCreate(oPC, jWindow, RGB_WINDOW);
     NuiSetBind(oPC, nToken, RGB_BIND_PART, JsonInt(RGB_WHOLE_OUTFIT));
     SetLocalInt(oPC, RGB_CHANNEL_LOCAL, 0);
     RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, RGB_CHANNELS, 0);

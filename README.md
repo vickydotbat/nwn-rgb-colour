@@ -20,7 +20,7 @@ Read [docs/how-it-works.md](docs/how-it-works.md). It explains why a lit shader 
 1. Add the release's hak to your module.
 2. Copy `nss/inc_rgb.nss` and, for the window, `nss/inc_rgbwin.nss` into your module.
 3. Call `RgbApply` on a player from your module's OnClientEnter, OnPlayerEquipItem and OnPlayerUnEquipItem scripts. The demo's `rgb_enter`, `rgb_equip` and `rgb_unequip` show how.
-4. Store colours on an armor item with `RgbSetColours`, or let players use the window with `RgbOpenWindow`.
+4. Store colours on an armor item with `RgbSetColours`, or let players use the window with `RgbOpenWindow`. The window's events go to your module's OnNuiEvent script. With none set, the window sets `rgb_window_event` there. If you have your own, call `ExecuteScript("rgb_window_event")` from it when `NuiGetWindowId` is `rgb_window`.
 
 Your own PLT parts need a material and a slot mask too. Run `just convert <folder>` on a folder of `.plt` files, and pack what it writes into your hak beside the parts. Each material takes the name of its PLT, so a model must name that PLT as its `bitmap`.
 
@@ -35,7 +35,7 @@ just compile
 just build <game folder>
 ```
 
-`just build` writes every worn stock part's material and mask, the palette atlas, `rgb_parts.txt` and `census.txt` to `build/parts`. `just compile` finds your game install by itself. Set `NWN_ROOT` to the game folder if it can't.
+`just build` writes every worn stock part's material and mask, the palette atlas, `rgb_parts.2da` and `census.txt` to `build/parts`. `just compile` finds your game install by itself. Set `NWN_ROOT` to the game folder if it can't.
 
 Compiled models that would need renaming to a different length are skipped and listed in the census. `cleanmodels`, a free NWN:EE community tool, thaws them to ASCII.
 

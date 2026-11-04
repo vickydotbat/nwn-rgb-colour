@@ -24,15 +24,22 @@ float RgbPack(int nRed, int nGreen, int nBlue)
 
 // The material a part model draws with. Most parts draw their own name, but
 // many race and phenotype parts draw another body's PLT, and the build lists
-// those in rgb_parts.txt. A creature wears one body, so sharing is safe.
+// those in rgb_parts.2da. A creature wears one body, so sharing is safe.
 string RgbPartMaterial(string sPart)
 {
-    json jParts = GetLocalJson(GetModule(), "RGB_PARTS");
+    object oModule = GetModule();
+    json jParts = GetLocalJson(oModule, "RGB_PARTS");
     if (JsonGetType(jParts) == JSON_TYPE_NULL)
     {
-        // Read the list once and keep it on the module.
-        jParts = JsonParse(ResManGetFileContents("rgb_parts", RESTYPE_TXT));
-        SetLocalJson(GetModule(), "RGB_PARTS", jParts);
+        // Read rgb_parts.2da once into a lookup kept on the module. A 2da
+        // has no search by value, so one pass here saves one per call.
+        jParts = JsonObject();
+        int nRows = Get2DARowCount("rgb_parts");
+        int i;
+        for (i = 0; i < nRows; i++)
+            jParts = JsonObjectSet(jParts, Get2DAString("rgb_parts", "Part", i),
+                                   JsonString(Get2DAString("rgb_parts", "Material", i)));
+        SetLocalJson(oModule, "RGB_PARTS", jParts);
     }
     json jMaterial = JsonObjectGet(jParts, sPart);
     return JsonGetType(jMaterial) == JSON_TYPE_STRING ? JsonGetString(jMaterial) : sPart;

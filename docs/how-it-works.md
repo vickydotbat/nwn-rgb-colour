@@ -14,7 +14,7 @@ A layer number is a category, not a shade. Filtering would blend two layers into
 
 A material is a `.mtr` file named after the bitmap a model draws. It tells the engine to draw that bitmap with `fs_rgbpart`, binds the mask and the palette atlas, and declares every shader value the scripts may set. The engine only accepts a value the material declares. Each declared value starts at -1, which means off. A value of 0 does not replace one set earlier, so a script turns a layer off with -1.
 
-Many race and phenotype models draw the human model's PLT. They share its material. Shader values belong to one creature, and a creature wears one body, so a dwarf's chest and a human's chest never mix. `rgb_parts.txt` lists each part whose material is not its own name, and `RgbPartMaterial` in `nss/inc_rgb.nss` reads it.
+Many race and phenotype models draw the human model's PLT. They share its material. Shader values belong to one creature, and a creature wears one body, so a dwarf's chest and a human's chest never mix. `rgb_parts.2da` lists each part whose material is not its own name, and `RgbPartMaterial` in `nss/inc_rgb.nss` reads it.
 
 Two parts of one body may draw the same PLT. Stock right shins draw the left shin's PLT, for example. One material would then colour both. `just build` gives each such part a model copy that names itself, so it gets a material of its own.
 

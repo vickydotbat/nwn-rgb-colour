@@ -42,6 +42,12 @@ An armor item keeps its colours in one local string, `RGB_COLOURS`, as JSON you 
 
 The demo calls `RgbApply` when a player enters, equips or unequips armor. Call it from the same events in your own module, and from an area's OnEnter if your module has several areas.
 
+### Saving colours
+
+The colours are a local string on the item, so they save wherever the item saves: in a server vault character file, in a single-player save, or in a container's inventory. The creature's shader values are rebuilt from the item every time, so nothing else needs saving. On a relog, OnClientEnter runs `RgbApply`, and the colours show again.
+
+A new item made from a blueprint starts with no colours, because locals live on the item, not the blueprint. To keep colours on a copy, call `CopyItem` with `bCopyVars` set to `TRUE`, or write them onto the new item with `RgbSetColours`.
+
 ## Testing a change
 
 Shaders and the atlas load when the client starts. After you change either, quit the game fully before you look again. A shader that fails to compile on your graphics driver is named in `logs/nwengineLog.txt` in the game user folder.

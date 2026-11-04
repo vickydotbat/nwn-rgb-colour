@@ -51,9 +51,12 @@ class MaterialTest(unittest.TestCase):
         out = self.build([(10, 12)], 1, 1)
         self.assertEqual(read_tga(out / "pmh0_chest007_m.tga")[2][0:3], bytes((0, 9 * 16, 10)))
 
-    def test_the_mask_is_never_mipmapped(self):
+    def test_the_mask_ships_without_a_txi_so_it_keeps_its_mipmaps(self):
         out = self.build([(1, 0)], 1, 1)
-        self.assertIn("mipmap 0", (out / "pmh0_chest007_m.txi").read_text())
+        # The shader reads the slot id at level 0, which mipmaps never touch,
+        # and the intensity filtered, which needs the mask's mipmaps at a
+        # distance. A mask .txi with mipmap 0 would take them away.
+        self.assertFalse((out / "pmh0_chest007_m.txi").exists())
 
     def test_the_material_draws_with_the_rgb_shader_and_binds_the_mask(self):
         mtr = (self.build([(1, 0)], 1, 1) / "pmh0_chest007.mtr").read_text().splitlines()

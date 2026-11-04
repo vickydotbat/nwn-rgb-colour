@@ -135,9 +135,12 @@ class BuildTest(unittest.TestCase):
                        capture_output=True)
         self.assertIn("pmh0_belt001", (out / "census.txt").read_text())
 
-    def test_the_mask_is_never_mipmapped(self):
+    def test_the_mask_ships_without_a_txi_so_it_keeps_its_mipmaps(self):
         out = self.run_build({"pmh0_chest001": "pmh0_chest001"}, ["pmh0_chest001"])
-        self.assertIn("mipmap 0", (out / "pmh0_chest001_m.txi").read_text())
+        # The shader reads the slot id at level 0, which mipmaps never touch,
+        # and the intensity filtered, which needs the mask's mipmaps at a
+        # distance. A mask .txi with mipmap 0 would take them away.
+        self.assertFalse((out / "pmh0_chest001_m.txi").exists())
 
     def test_a_binary_right_limb_drawing_the_left_bitmap_names_itself(self):
         holder = tempfile.TemporaryDirectory()

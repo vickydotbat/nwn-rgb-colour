@@ -8,7 +8,7 @@ This package gives the shader the layers back, then lets a script pick any colou
 
 Each part gets a slot mask: a copy of its PLT as a TGA the shader can read. Red holds the intensity and green holds the layer times 16. The part's material binds the mask on `texture6`. For each pixel, the shader reads the mask, finds the layer, and draws the colour a script set for that layer at the pixel's own intensity. A layer with no colour set draws the stock baked texture.
 
-A layer number is a category, not a shade. Filtering or mipmapping would blend two layers into a third that doesn't exist. Each mask has a `.txi` beside it holding `mipmap 0`, and ships as a full-size, uncompressed TGA.
+A layer number is a category, not a shade. Filtering would blend two layers into a third that doesn't exist, so the shader reads the layer from the full-size mask, texel by texel. The intensity is a shade, so the shader reads it filtered, through the mask's mipmaps: from a distance, that keeps coloured armor from glittering. Each mask ships as a full-size, uncompressed TGA with no `.txi`, so the client builds those mipmaps.
 
 ## The material
 

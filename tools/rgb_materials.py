@@ -63,8 +63,9 @@ def write_material(plt, name, out):
     """A slot mask and a material named `name`, from one PLT."""
     width, height, pixels = read_plt(plt)
     (out / f"{name}_m.tga").write_bytes(mask_tga(width, height, pixels))
-    # A slot id is a category: filtering or mipmapping it mixes slots.
-    (out / f"{name}_m.txi").write_text("mipmap 0\n")
+    # No .txi: the client builds the mask's mipmaps. The shader reads the slot
+    # id at level 0, which mipmaps never touch, and the intensity filtered,
+    # which needs the mipmaps at a distance or it glitters.
     (out / f"{name}.mtr").write_text(material(name))
 
 

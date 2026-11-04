@@ -45,6 +45,10 @@ class MaterialTest(unittest.TestCase):
         self.assertEqual(body[0:3], bytes((0, CLOTH1 * 16, 200)))
         self.assertEqual(body[3:6], bytes((0, 0, 90)))
 
+    def test_a_layer_past_tattoo_2_reads_as_tattoo_2(self):
+        out = self.build([(10, 12)], 1, 1)
+        self.assertEqual(read_tga(out / "pmh0_chest007_m.tga")[2][0:3], bytes((0, 9 * 16, 10)))
+
     def test_the_mask_is_never_mipmapped(self):
         out = self.build([(1, 0)], 1, 1)
         self.assertIn("mipmap 0", (out / "pmh0_chest007_m.txi").read_text())
@@ -61,7 +65,8 @@ class MaterialTest(unittest.TestCase):
 
     def test_a_file_that_is_not_a_plt_is_refused(self):
         tmp = pathlib.Path(tempfile.mkdtemp())
-        (tmp / "bad.plt").write_bytes(b"NOPE" + bytes(30))
+        # Right size for a 1x1 PLT, wrong signature.
+        (tmp / "bad.plt").write_bytes(b"TGA V1  " + bytes(8) + struct.pack("<II", 1, 1) + bytes(2))
         result = subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")],
                                 capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)

@@ -18,4 +18,11 @@ compile folder="demo":
     fi
     root=()
     if [ -n "{{nwn_root}}" ]; then root=(--root "{{nwn_root}}"); fi
-    nwn_script_comp "${root[@]}" -y -R -c "{{folder}}"
+    # nss/ holds the includes. Compiled files go to build/, never beside the source.
+    mkdir -p build/ncs
+    nwn_script_comp "${root[@]}" --dirs nss -d build/ncs -y -R -c "{{folder}}"
+
+# Build the overrides and the demo module, and stage them in the game's
+# user folder (development/ and modules/).
+demo game user:
+    tools/build_demo.sh "{{game}}" "{{user}}"

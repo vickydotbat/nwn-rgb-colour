@@ -16,7 +16,7 @@ This skill holds the engine rules a change must keep, and the steps for a broken
 - **Prefix every custom parameter `rgb`.** A name a stock uniform uses turns the part pink.
 - **An object holds at most 1024 shader values.** The engine refuses value 1025 with no error, so the colour never shows. Setting a value never removes one, and the list is saved with the character.
 - **Reset everything once, then write only what you want.** A full reapply calls `ResetMaterialShaderUniforms` with no material and no parameter. A reset scoped to one material or uniform makes the client restore every material's defaults when it replays the list. Keep one writer of colour values, because a full reset also clears values another feature set.
-- **A worn helmet, a robe attachment and a VFX instance never take a creature's values.** A helmet needs its own values on the item, sent again when the client rebuilds it (see the helmet probe). A robe keeps stock PLT colours. A VFX keeps PLT colour.
+- **A worn helmet, a robe attachment and a VFX instance never take a creature's values.** Helmets are out of scope: NWScript alone cannot keep a worn helmet's colour. The docs explain the server-side fix. A robe keeps stock PLT colours. A VFX keeps PLT colour.
 - **A shader or atlas change needs a full client restart to show.**
 - **Read the client log after every in-game check.** `logs/nwengineLog.txt` in the game's user folder names a shader that failed to compile (`CompileShader: Shader <name> failed to compile`). An offline glslang check misses words a driver reserves: Mesa rejects `packed`.
 

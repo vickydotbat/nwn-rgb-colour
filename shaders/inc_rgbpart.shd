@@ -1,0 +1,334 @@
+//=============================================================================
+//
+// inc_rgbpart.shd -- RGB slots for an armor part, the body
+// fs_rgbpart and fs_rgbpart_nm share. Each sets the map defines and includes
+// this; fs_rgbpart_nm is for a part that keeps its normal and specular maps.
+//
+// The part's .mtr binds a slot mask on texture6, made from its PLT by the
+// slot mask tool: R = intensity, G = slot * 16. Twelve slots: 0-9 are the
+// PLT layers, 10-11 accents. A script sets each slot per object with
+// SetMaterialShaderUniformVec4 on the creature, one float per parameter
+// (a 4-component parameter does not reach the shader whole):
+//
+//   rgbC<n>  colour packed as r * 65536 + g * 256 + b, each 0-255
+//   rgbS<n>  specularity      rgbR<n>  roughness
+//   rgbX<n>  clear: 1 cuts the texel out, 0-1 makes it see-through
+//            (blending needs `transparency 1` in the .mtr)
+//   rgbG<n>  glow, adds the slot colour as light
+//   rgbP<n>  palette pick: an atlas row. The slot reads
+//            atlas[row][intensity], the way fs_pltgen reads a PLT.
+//   rgbDebug 1 draws each slot in a flat false colour
+//            2, 3, 4 draw what texture8, texture9, texture10 return
+//            5 draws textureNBound: red 8, green 9, blue 10
+//            6 exact diff: baked texel vs atlas pick, |a-b| * 32,
+//              black matches; a slot with no rgbP draws dim grey
+//            7 the same diff with both sides filtered like the draw
+//            8 the atlas size the engine uploaded: red = width / 512,
+//              green = height / 4096 (2240 rows reads 0.55)
+//   rgbAtlasMode > 0 samples the atlas filtered at the bake's coordinates;
+//            otherwise reads the exact texel
+//   rgbAtlasFlip > 0 counts atlas rows from the other end
+//   rgbSmooth >= 0 blends the finished colour of the four nearest texels,
+//            the way the engine filters the baked PLT, so slot borders
+//            are smooth; each texel still uses its own exact slot
+//   rgbO     overlay colour, packed like rgbC; -1 keeps the overlay's own
+//   rgbOA    overlay strength 0-1; -1 hides it
+//
+// The palette atlas is texture8, made by the palette atlas tool. texture9 and
+// texture10 carry solid probes for the slot test.
+//
+// An overlay (a tattoo) is texture7, RGBA in the part's own UVs. It draws on
+// the skin channel (slot 0) only, so clothing covers it.
+//
+// Every parameter is "off" below zero, and the .mtr declares each at -1.
+// A script turns one off with -1, never 0: a value of 0 does not
+// replace an earlier override.
+//
+//=============================================================================
+
+#include "inc_standard"
+
+uniform lowp int texture6Bound;
+uniform sampler2D texUnit6;
+
+uniform float rgbDebug;
+uniform lowp int texture8Bound;
+uniform sampler2D texUnit8;
+uniform lowp int texture9Bound;
+uniform sampler2D texUnit9;
+uniform lowp int texture10Bound;
+uniform sampler2D texUnit10;
+uniform float rgbAtlasMode;
+uniform float rgbAtlasFlip;
+uniform float rgbSmooth;
+uniform lowp int texture7Bound;
+uniform sampler2D texUnit7;
+uniform highp float rgbO;
+uniform float rgbOA;
+uniform highp float rgbC0; uniform float rgbS0; uniform float rgbR0; uniform float rgbX0; uniform float rgbG0;
+uniform highp float rgbC1; uniform float rgbS1; uniform float rgbR1; uniform float rgbX1; uniform float rgbG1;
+uniform highp float rgbC2; uniform float rgbS2; uniform float rgbR2; uniform float rgbX2; uniform float rgbG2;
+uniform highp float rgbC3; uniform float rgbS3; uniform float rgbR3; uniform float rgbX3; uniform float rgbG3;
+uniform highp float rgbC4; uniform float rgbS4; uniform float rgbR4; uniform float rgbX4; uniform float rgbG4;
+uniform highp float rgbC5; uniform float rgbS5; uniform float rgbR5; uniform float rgbX5; uniform float rgbG5;
+uniform highp float rgbC6; uniform float rgbS6; uniform float rgbR6; uniform float rgbX6; uniform float rgbG6;
+uniform highp float rgbC7; uniform float rgbS7; uniform float rgbR7; uniform float rgbX7; uniform float rgbG7;
+uniform highp float rgbC8; uniform float rgbS8; uniform float rgbR8; uniform float rgbX8; uniform float rgbG8;
+uniform highp float rgbC9; uniform float rgbS9; uniform float rgbR9; uniform float rgbX9; uniform float rgbG9;
+uniform highp float rgbC10; uniform float rgbS10; uniform float rgbR10; uniform float rgbX10; uniform float rgbG10;
+uniform highp float rgbC11; uniform float rgbS11; uniform float rgbR11; uniform float rgbX11; uniform float rgbG11;
+uniform float rgbP0; uniform float rgbP1; uniform float rgbP2; uniform float rgbP3; uniform float rgbP4; uniform float rgbP5;
+uniform float rgbP6; uniform float rgbP7; uniform float rgbP8; uniform float rgbP9; uniform float rgbP10; uniform float rgbP11;
+
+// The mask's green channel stores slot * 16.
+int RgbSlotOf(vec4 mask)
+{
+    return int(mask.g * 255.0 / 16.0 + 0.5);
+}
+
+// The mask's slot ids must not blend across a border, so read the exact texel.
+vec4 RgbMask()
+{
+#if __VERSION__ >= 130
+    ivec2 size = textureSize(texUnit6, 0);
+    ivec2 at = clamp(ivec2(fract(vTexCoords.xy) * vec2(size)), ivec2(0), size - 1);
+    return texelFetch(texUnit6, at, 0);
+#else
+    return texture2D(texUnit6, vTexCoords.xy);
+#endif
+}
+
+float RgbPick(int slot)
+{
+    if (slot == 0) return rgbP0; if (slot == 1) return rgbP1; if (slot == 2) return rgbP2;
+    if (slot == 3) return rgbP3; if (slot == 4) return rgbP4; if (slot == 5) return rgbP5;
+    if (slot == 6) return rgbP6; if (slot == 7) return rgbP7; if (slot == 8) return rgbP8;
+    if (slot == 9) return rgbP9; if (slot == 10) return rgbP10; return rgbP11;
+}
+
+// atlas[row][intensity]. Exact mode reads column round(intensity * 255);
+// filtered mode samples at (intensity, row centre) as fs_pltgen does.
+vec3 RgbAtlas(float row, float intensity)
+{
+#if __VERSION__ >= 130
+    ivec2 size = textureSize(texUnit8, 0);
+    float r = rgbAtlasFlip > 0.0 ? float(size.y) - 1.0 - floor(row + 0.5) : floor(row + 0.5);
+    if (rgbAtlasMode > 0.0)
+        return texture2D(texUnit8, vec2((intensity * 255.0 + 0.5) / float(size.x), (r + 0.5) / float(size.y))).rgb;
+    ivec2 at = clamp(ivec2(int(intensity * 255.0 + 0.5), int(r)), ivec2(0), size - 1);
+    return texelFetch(texUnit8, at, 0).rgb;
+#else
+    return texture2D(texUnit8, vec2(intensity, 0.5)).rgb;
+#endif
+}
+
+#if __VERSION__ >= 130
+// The row averaged over `span` columns around the intensity. Columns 256 on
+// hold each row averaged over 2, 4, 8 ... 256 columns (palette-atlas.py), the
+// way the stock bake's mipmaps average a far pixel's colours, so a row that
+// changes at every column (stock row 175's glitter) does not fizz.
+vec3 RgbAtlasLevel(int r, float intensity, int level)
+{
+    int width = 256 >> level;
+    int column = (512 - (512 >> level)) + min(int(intensity * float(width)), width - 1);
+    return texelFetch(texUnit8, ivec2(column, r), 0).rgb;
+}
+
+vec3 RgbAtlasSpread(float row, float intensity, float span)
+{
+    if (span <= 1.0)
+        return RgbAtlas(row, intensity);
+    ivec2 size = textureSize(texUnit8, 0);
+    int r = int(clamp(rgbAtlasFlip > 0.0 ? float(size.y) - 1.0 - floor(row + 0.5) : floor(row + 0.5), 0.0, float(size.y - 1)));
+    float level = min(log2(span), 8.0);
+    int low = int(floor(level));
+    return mix(RgbAtlasLevel(r, intensity, low), RgbAtlasLevel(r, intensity, min(low + 1, 8)), level - float(low));
+}
+#endif
+
+// The baked PLT texel under this fragment's mask texel, unfiltered.
+vec3 RgbBakedExact()
+{
+#if __VERSION__ >= 130
+    ivec2 size = textureSize(texUnit0, 0);
+    ivec2 at = clamp(ivec2(fract(vTexCoords.xy) * vec2(size)), ivec2(0), size - 1);
+    return texelFetch(texUnit0, at, 0).rgb;
+#else
+    return texture2D(texUnit0, vTexCoords.xy).rgb;
+#endif
+}
+
+void RgbSlot(int slot, out highp float c, out vec4 m)
+{
+    if (slot == 0) { c = rgbC0; m = vec4(rgbS0, rgbR0, rgbX0, rgbG0); }
+    else if (slot == 1) { c = rgbC1; m = vec4(rgbS1, rgbR1, rgbX1, rgbG1); }
+    else if (slot == 2) { c = rgbC2; m = vec4(rgbS2, rgbR2, rgbX2, rgbG2); }
+    else if (slot == 3) { c = rgbC3; m = vec4(rgbS3, rgbR3, rgbX3, rgbG3); }
+    else if (slot == 4) { c = rgbC4; m = vec4(rgbS4, rgbR4, rgbX4, rgbG4); }
+    else if (slot == 5) { c = rgbC5; m = vec4(rgbS5, rgbR5, rgbX5, rgbG5); }
+    else if (slot == 6) { c = rgbC6; m = vec4(rgbS6, rgbR6, rgbX6, rgbG6); }
+    else if (slot == 7) { c = rgbC7; m = vec4(rgbS7, rgbR7, rgbX7, rgbG7); }
+    else if (slot == 8) { c = rgbC8; m = vec4(rgbS8, rgbR8, rgbX8, rgbG8); }
+    else if (slot == 9) { c = rgbC9; m = vec4(rgbS9, rgbR9, rgbX9, rgbG9); }
+    else if (slot == 10) { c = rgbC10; m = vec4(rgbS10, rgbR10, rgbX10, rgbG10); }
+    else { c = rgbC11; m = vec4(rgbS11, rgbR11, rgbX11, rgbG11); }
+}
+
+vec3 RgbUnpack(highp float code)
+{
+    highp float v = floor(code + 0.5);
+    highp float r = floor(v / 65536.0);
+    highp float g = floor((v - r * 65536.0) / 256.0);
+    highp float b = v - r * 65536.0 - g * 256.0;
+    return vec3(r, g, b) / 255.0;
+}
+
+// One RGB pick shaded like a palette row: intensity 0.5 is the pick itself,
+// darker below, lifted toward white above.
+vec3 RgbRamp(vec3 pick, float intensity)
+{
+    if (intensity < 0.5)
+        return pick * (intensity / 0.5);
+    return mix(pick, vec3(1.0), (intensity - 0.5) / 0.5 * 0.6);
+}
+
+vec3 RgbDebugColour(int slot)
+{
+    float h = float(slot) / 12.0;
+    return clamp(abs(fract(h + vec3(0.0, 2.0, 1.0) / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+}
+
+#if __VERSION__ >= 130
+// The finished colour of one mask texel: its slot's atlas pick or RGB, or the
+// engine's filtered bake when the slot has neither, so every slot keeps its
+// mipmaps at a distance. Up close each texel reads its own intensity, as the
+// PLT bake does; at a distance it reads the filtered intensity, so it does not
+// shimmer, and a pick averages the row over `span` columns.
+vec3 RgbTexelColour(vec4 m, vec3 baked, float intensity, float far, float span)
+{
+    int slot = RgbSlotOf(m);
+    highp float c; vec4 unused;
+    RgbSlot(slot, c, unused);
+    float pick = RgbPick(slot);
+    intensity = mix(m.r, intensity, far);
+    if (pick >= 0.0) return RgbAtlasSpread(pick, intensity, span);
+    if (c >= 0.0) return RgbRamp(RgbUnpack(c), intensity);
+    return baked;
+}
+
+vec3 RgbBlended(vec3 baked, float intensity)
+{
+    ivec2 size = textureSize(texUnit6, 0);
+    vec2 texels = vTexCoords.xy * vec2(size);
+    float far = clamp(max(length(dFdx(texels)), length(dFdy(texels))) - 1.0, 0.0, 1.0);
+    vec2 p = fract(vTexCoords.xy) * vec2(size) - 0.5;
+    ivec2 a = ivec2(floor(p));
+    vec2 f = p - floor(p);
+    ivec2 lo = ivec2(0), hi = size - 1;
+    // Wrap like a repeating texture: UVs cross the seam on some parts.
+    ivec2 a0 = ivec2(mod(vec2(a), vec2(size)));
+    ivec2 a1 = ivec2(mod(vec2(a + 1), vec2(size)));
+    vec4 m00 = texelFetch(texUnit6, clamp(a0, lo, hi), 0);
+    vec4 m10 = texelFetch(texUnit6, clamp(ivec2(a1.x, a0.y), lo, hi), 0);
+    vec4 m01 = texelFetch(texUnit6, clamp(ivec2(a0.x, a1.y), lo, hi), 0);
+    vec4 m11 = texelFetch(texUnit6, clamp(a1, lo, hi), 0);
+    // `far` is 0 up close and 1 once a texel is under a pixel. Then a pixel
+    // covers texels of many intensities, about as many as these four span.
+    float spread = max(max(m00.r, m10.r), max(m01.r, m11.r)) - min(min(m00.r, m10.r), min(m01.r, m11.r));
+    float span = 1.0 + spread * 255.0 * far;
+    vec3 c00 = RgbTexelColour(m00, baked, intensity, far, span);
+    vec3 c10 = RgbTexelColour(m10, baked, intensity, far, span);
+    vec3 c01 = RgbTexelColour(m01, baked, intensity, far, span);
+    vec3 c11 = RgbTexelColour(m11, baked, intensity, far, span);
+    return mix(mix(c00, c10, f.x), mix(c01, c11, f.x), f.y);
+}
+#endif
+
+void main ()
+{
+    FragmentColor = vec4(1.0);
+    SetupStandardShaderInputs();
+
+    highp float slotC = -1.0;
+    vec4 slotM = vec4(-1.0);
+    vec3 display = RevertColorSpace(FragmentColor.rgb);
+
+    // With no mask (a VFX model, a plain texture), the whole model is slot 0
+    // and the texel's own brightness is its intensity.
+    {
+        vec4 mask = texture6Bound != 0 ? RgbMask()
+            : vec4(dot(display, vec3(0.299, 0.587, 0.114)), 0.0, 0.0, 1.0);
+        int slot = RgbSlotOf(mask);
+        // The slot id is exact, but the intensity reads the mask's mipmaps,
+        // so a coloured slot does not shimmer at a distance.
+        float intensity = texture6Bound != 0 ? texture2D(texUnit6, vTexCoords.xy).r : mask.r;
+
+        RgbSlot(slot, slotC, slotM);
+
+        float pick = RgbPick(slot);
+        int debug = int(rgbDebug + 0.5);
+        if (debug == 1)
+            display = RgbDebugColour(slot) * (0.4 + 0.6 * mask.r);
+        else if (debug == 2)
+            display = texture2D(texUnit8, vTexCoords.xy).rgb;
+        else if (debug == 3)
+            display = texture2D(texUnit9, vTexCoords.xy).rgb;
+        else if (debug == 4)
+            display = texture2D(texUnit10, vTexCoords.xy).rgb;
+        else if (debug == 5)
+            display = vec3(texture8Bound != 0 ? 1.0 : 0.0, texture9Bound != 0 ? 1.0 : 0.0,
+                           texture10Bound != 0 ? 1.0 : 0.0);
+#if __VERSION__ >= 130
+        else if (debug == 8)
+            display = vec3(vec2(textureSize(texUnit8, 0)) / vec2(512.0, 4096.0), 0.0);
+#endif
+        else if (debug == 6 || debug == 7)
+        {
+            if (pick < 0.0)
+                display = vec3(0.15);
+            else
+            {
+                vec3 baked = debug == 6 ? RgbBakedExact() : texture2D(texUnit0, vTexCoords.xy).rgb;
+                display = clamp(abs(baked - RgbAtlas(pick, mask.r)) * 32.0, 0.0, 1.0);
+            }
+        }
+#if __VERSION__ >= 130
+        else if (rgbSmooth >= 0.0 && texture6Bound != 0)
+            display = RgbBlended(display, intensity);
+#endif
+        else if (pick >= 0.0)
+            display = RgbAtlas(pick, intensity);
+        else if (slotC >= 0.0)
+            display = RgbRamp(RgbUnpack(slotC), intensity);
+
+        if (texture7Bound != 0 && rgbOA > 0.0 && slot == 0)
+        {
+            vec4 ink = texture2D(texUnit7, vTexCoords.xy);
+            vec3 inkColour = rgbO >= 0.0 ? RgbUnpack(rgbO) : ink.rgb;
+            display = mix(display, inkColour * (0.6 + 0.4 * mask.r), ink.a * rgbOA);
+        }
+
+        if (slotM.z >= 0.99)
+            discard;
+
+        FragmentColor.rgb = ApplyColorSpace(display);
+
+        #if LIGHTING == 1 && (FRAGMENT_LIGHTING == 1 || NORMAL_MAP == 1) && SPECULAR_LIGHT == 1
+            SetupSpecularity(FragmentColor.rgb * materialFrontDiffuse.rgb);
+            if (slotM.x > 0.0)
+                MATERIAL_SPECULARITY_VALUE = slotM.x;
+            if (slotM.y > 0.0)
+                MATERIAL_ROUGHNESS_VALUE = slotM.y;
+        #endif
+    }
+
+    ApplyStandardShader();
+    // `transparency 1` puts the part in the blended pass, where the texture's
+    // own alpha (palette shine alpha) would show as see-through. Only the
+    // clear parameter makes a texel see-through.
+    FragmentColor.a = 1.0;
+    if (slotM.z > 0.0)
+        FragmentColor.a = 1.0 - slotM.z;
+    FragmentColor.rgb += display * max(slotM.w, 0.0);
+    gl_FragColor = FragmentColor;
+}

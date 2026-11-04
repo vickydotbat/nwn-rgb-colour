@@ -32,7 +32,8 @@ class CompileTest(unittest.TestCase):
                 'void main() { SetLocalInt(OBJECT_SELF, "a", 1); }\n')
             result = compile_dir(folder)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertTrue((folder / "good.ncs").exists())
+            self.assertFalse((folder / "good.ncs").exists())
+        self.assertTrue((REPO / "build" / "ncs" / "good.ncs").exists())
 
 
 if __name__ == "__main__":

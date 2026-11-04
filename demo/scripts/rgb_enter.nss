@@ -3,9 +3,26 @@
 // have something to show.
 #include "inc_rgb"
 
+// Put a usable easel beside the entry point, once. Using it opens the colour
+// window, so a player never needs the console.
+void RgbPlaceEasel(object oPC)
+{
+    if (GetIsObjectValid(GetObjectByTag("RGB_EASEL"))) return;
+    location lHere = GetStartingLocation();
+    vector vAt = GetPositionFromLocation(lHere) + Vector(2.0, 0.0, 0.0);
+    location lEasel = Location(GetAreaFromLocation(lHere), vAt, 270.0);
+    // The stock painting easel is neither static nor a container, so a
+    // script can make it usable and give it an OnUsed script.
+    object oEasel = CreateObject(OBJECT_TYPE_PLACEABLE, "plc_pntingeasel", lEasel, FALSE, "RGB_EASEL");
+    SetUseableFlag(oEasel, TRUE);
+    SetName(oEasel, "Colour easel");
+    SetEventScript(oEasel, EVENT_SCRIPT_PLACEABLE_ON_USED, "rgb_window_open");
+}
+
 void main()
 {
     object oPC = GetEnteringObject();
+    RgbPlaceEasel(oPC);
     // A returning player keeps their armor. Show its colours again: the
     // engine sends a creature's values to clients, and RgbApply rebuilds
     // them from the item, so they match what the item says.
@@ -24,5 +41,5 @@ void main()
     json jColours = JsonParse("{\"all\": {\"1\": \"#1e5bd6\"}, \"forel\": {\"1\": \"#2ecc40\"}}");
     RgbSetColours(oCloth, jColours);
     AssignCommand(oPC, ActionEquipItem(oCloth, INVENTORY_SLOT_CHEST));
-    SendMessageToPC(oPC, "RGB demo: type ~ then DebugMode 1, then dm_runscript rgb_red or dm_runscript rgb_clear.");
+    SendMessageToPC(oPC, "Use the easel to open the colour window.");
 }

@@ -21,17 +21,31 @@ void main()
         DeleteLocalString(oPC, RGB_DRAG);
         return;
     }
+    // A colour or mode button: its id is the bind name and its index.
+    if (sType == "click")
+    {
+        string sBase = GetStringLeft(sElement, GetStringLength(sElement) - 1);
+        int nIndex = StringToInt(GetStringRight(sElement, 1));
+        if (sBase == RGB_BIND_CHANNEL)
+        {
+            SetLocalInt(oPC, RGB_BIND_CHANNEL, nIndex);
+            RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, 6, nIndex);
+            RgbWindowLoad(oPC, nToken);
+        }
+        else if (sBase == RGB_BIND_MODE)
+        {
+            RgbSelectButton(oPC, nToken, RGB_BIND_MODE, 2, nIndex);
+            RgbWindowShowMode(oPC, nToken, nIndex == 1);
+        }
+        return;
+    }
     if (sType != "watch") return;
 
     string sDrag = GetLocalString(oPC, RGB_DRAG);
-    if (sElement == RGB_BIND_PART || sElement == RGB_BIND_CHANNEL)
+    if (sElement == RGB_BIND_PART)
     {
         // A new part or channel: show what it holds.
         RgbWindowLoad(oPC, nToken);
-    }
-    else if (sElement == RGB_BIND_MODE)
-    {
-        RgbWindowShowMode(oPC, nToken, JsonGetInt(NuiGetBind(oPC, nToken, RGB_BIND_MODE)) == 1);
     }
     else if (sElement == RGB_BIND_COLOUR && sDrag == RGB_ID_PICKER)
     {

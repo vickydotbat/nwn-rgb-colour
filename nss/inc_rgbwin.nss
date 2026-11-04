@@ -86,7 +86,7 @@ string RgbWindowKey(object oPC, int nToken)
 // The channel the window points at, 1-6. The toggles count from 0.
 int RgbWindowChannel(object oPC, int nToken)
 {
-    return JsonGetInt(NuiGetBind(oPC, nToken, RGB_BIND_CHANNEL)) + 1;
+    return GetLocalInt(oPC, RGB_BIND_CHANNEL) + 1;
 }
 
 // Show one of the two controls, the picker or the slider.
@@ -94,6 +94,14 @@ void RgbWindowShowMode(object oPC, int nToken, int bPreset)
 {
     NuiSetBind(oPC, nToken, RGB_BIND_IS_RGB, JsonBool(!bPreset));
     NuiSetBind(oPC, nToken, RGB_BIND_IS_PRESET, JsonBool(bPreset));
+}
+
+// Light button nValue of a button row and unlight the rest.
+void RgbSelectButton(object oPC, int nToken, string sBind, int nCount, int nValue)
+{
+    int i;
+    for (i = 0; i < nCount; i++)
+        NuiSetBind(oPC, nToken, sBind + IntToString(i), JsonBool(i == nValue));
 }
 
 // Fill the controls with the stored value of the part and channel shown.
@@ -106,7 +114,7 @@ void RgbWindowLoad(object oPC, int nToken)
     int bPreset = GetStringLeft(sValue, 1) == "p";
     int nRow = bPreset ? RgbPresetRow(sValue) : 0;
     int nPacked = bPreset || sValue == "" ? 0 : FloatToInt(RgbParseHex(sValue));
-    NuiSetBind(oPC, nToken, RGB_BIND_MODE, JsonInt(bPreset));
+    RgbSelectButton(oPC, nToken, RGB_BIND_MODE, 2, bPreset);
     NuiSetBind(oPC, nToken, RGB_BIND_COLOUR, NuiColor(nPacked / 65536, (nPacked / 256) % 256, nPacked % 256));
     NuiSetBind(oPC, nToken, RGB_BIND_ROW, JsonInt(nRow));
     NuiSetBind(oPC, nToken, RGB_BIND_ROW_LABEL, JsonString(IntToString(nRow)));
@@ -157,6 +165,24 @@ json RgbFormRow(string sLabel, json jControl)
     return RgbSized(NuiRow(jRow), RGB_WIN_WIDTH, RGB_ROW);
 }
 
+// A row of small select buttons, one per label. Button i is lit while the
+// bind sBind holds i. Stock toggles stretch each button to the width of the
+// whole control, so the window builds its own row of fixed buttons.
+json RgbButtonRow(string sLabel, json jLabels, string sBind, float fButton)
+{
+    json jLabel = RgbSized(NuiLabel(JsonString(sLabel), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_MIDDLE)),
+                           RGB_LABEL, RGB_ROW);
+    json jRow = JsonArrayInsert(JsonArray(), jLabel);
+    int i;
+    for (i = 0; i < JsonGetLength(jLabels); i++)
+    {
+        json jButton = NuiButtonSelect(JsonArrayGet(jLabels, i), NuiBind(sBind + IntToString(i)));
+        jRow = JsonArrayInsert(jRow, RgbSized(NuiId(jButton, sBind + IntToString(i)), fButton, RGB_ROW));
+    }
+    return RgbSized(NuiRow(jRow), RGB_WIN_WIDTH, RGB_ROW);
+}
+
+
 // A gap of RGB_GAP between two rows.
 json RgbGap()
 {
@@ -192,9 +218,9 @@ void RgbOpenWindow(object oPC)
     json jColumn = JsonArray();
     jColumn = JsonArrayInsert(jColumn, RgbFormRow("Part", NuiCombo(RgbWindowParts(oArmor), NuiBind(RGB_BIND_PART))));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
-    jColumn = JsonArrayInsert(jColumn, RgbFormRow("Colour", NuiToggles(NUI_DIRECTION_HORIZONTAL, jChannels, NuiBind(RGB_BIND_CHANNEL))));
+    jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Colour", jChannels, RGB_BIND_CHANNEL, 32.0));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
-    jColumn = JsonArrayInsert(jColumn, RgbFormRow("Mode", NuiToggles(NUI_DIRECTION_HORIZONTAL, jModes, NuiBind(RGB_BIND_MODE))));
+    jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Mode", jModes, RGB_BIND_MODE, 80.0));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
     jColumn = JsonArrayInsert(jColumn, jPicker);
     jColumn = JsonArrayInsert(jColumn, jSlider);
@@ -202,19 +228,21 @@ void RgbOpenWindow(object oPC)
     // The column holds three rows with their gaps, then the picker or the
     // slider. Hidden or not, both keep their place, so count both.
     float fHeight = 3.0 * (RGB_ROW + RGB_GAP) + RGB_PICKER + RGB_ROW;
-    json jRoot = RgbSized(NuiCol(jColumn), RGB_WIN_WIDTH, fHeight);
+    // The root is a group with scrollbars off: the window is sized to hold
+    // it, so it never needs them.
+    json jRoot = RgbSized(NuiGroup(RgbSized(NuiCol(jColumn), RGB_WIN_WIDTH, fHeight), FALSE, NUI_SCROLLBARS_NONE),
+                          RGB_WIN_WIDTH, fHeight);
     json jGeometry = NuiRect(-1.0, -1.0, RGB_WIN_WIDTH + RGB_FRAME_SIDES, fHeight + RGB_TITLE_BAR);
     json jWindow = NuiWindow(jRoot, JsonString("Colours"), jGeometry,
         JSON_FALSE, JSON_FALSE, JSON_TRUE, JSON_FALSE, JSON_TRUE);
 
     int nToken = NuiCreate(oPC, jWindow, RGB_WINDOW, RGB_WINDOW_EVENTS);
     NuiSetBind(oPC, nToken, RGB_BIND_PART, JsonInt(RGB_WHOLE_OUTFIT));
-    NuiSetBind(oPC, nToken, RGB_BIND_CHANNEL, JsonInt(0));
+    SetLocalInt(oPC, RGB_BIND_CHANNEL, 0);
+    RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, 6, 0);
     RgbWindowLoad(oPC, nToken);
     // Watch the controls whose changes the event script acts on.
     NuiSetBindWatch(oPC, nToken, RGB_BIND_PART, TRUE);
-    NuiSetBindWatch(oPC, nToken, RGB_BIND_CHANNEL, TRUE);
-    NuiSetBindWatch(oPC, nToken, RGB_BIND_MODE, TRUE);
     NuiSetBindWatch(oPC, nToken, RGB_BIND_COLOUR, TRUE);
     NuiSetBindWatch(oPC, nToken, RGB_BIND_ROW, TRUE);
 }

@@ -27,6 +27,8 @@ const string RGB_ID_GRID = "grid";
 const string RGB_ID_SLOT = "slot";
 // The control a player is dragging, kept on the player.
 const string RGB_DRAG = "RGB_DRAG";
+// The picker value the window last set itself, kept on the player.
+const string RGB_LOADED = "RGB_LOADED";
 
 // Window sizes, in points. The client draws a window at exactly the size it
 // is given and never shrinks it to fit. So every element gets a width, a
@@ -178,6 +180,11 @@ void RgbWindowLoad(object oPC, int nToken)
     string sValue = RgbChannelValue(jColours, RgbWindowKey(oPC, nToken), RgbWindowChannel(oPC));
     int bPreset = GetStringLeft(sValue, 1) == "p";
     int nPacked = bPreset || sValue == "" ? 0 : FloatToInt(RgbParseHex(sValue));
+    // A drag ends here even when its mouseup landed outside the window, and
+    // the picker's echo of the value set below is never taken as a pick.
+    DeleteLocalString(oPC, RGB_DRAG);
+    SetLocalString(oPC, RGB_LOADED, "#" + RgbHexByte(nPacked / 65536) + RgbHexByte((nPacked / 256) % 256)
+                                    + RgbHexByte(nPacked % 256));
     RgbSelectButton(oPC, nToken, RGB_BIND_MODE, RGB_MODES, bPreset);
     NuiSetBind(oPC, nToken, RGB_BIND_COLOUR, NuiColor(nPacked / 65536, (nPacked / 256) % 256, nPacked % 256));
     RgbWindowShowMode(oPC, nToken, bPreset);

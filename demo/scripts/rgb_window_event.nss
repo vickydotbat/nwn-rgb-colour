@@ -61,6 +61,10 @@ void main()
         string sHex = "#" + RgbHexByte(JsonGetInt(JsonObjectGet(jColour, "r")))
                           + RgbHexByte(JsonGetInt(JsonObjectGet(jColour, "g")))
                           + RgbHexByte(JsonGetInt(JsonObjectGet(jColour, "b")));
+        // The picker echoes the value the window set when it loaded a
+        // channel. That echo is not the player's pick.
+        if (sHex == GetLocalString(oPC, RGB_LOADED)) return;
+        DeleteLocalString(oPC, RGB_LOADED);
         RgbWindowStore(oPC, nToken, sHex);
     }
 }

@@ -244,8 +244,21 @@ json RgbGap()
 }
 
 // Open the colour window for oPC.
+// Close the window and forget its state on the player. A local left behind
+// would act in the next window, and saves with the character.
+void RgbCloseWindow(object oPC)
+{
+    int nToken = NuiFindWindow(oPC, RGB_WINDOW);
+    if (nToken) NuiDestroy(oPC, nToken);
+    DeleteLocalString(oPC, RGB_DRAG);
+    DeleteLocalString(oPC, RGB_LOADED);
+    DeleteLocalInt(oPC, RGB_CHANNEL_LOCAL);
+}
+
 void RgbOpenWindow(object oPC)
 {
+    // One window at a time: two would share the locals above.
+    RgbCloseWindow(oPC);
     object oArmor = RgbWindowArmor(oPC);
     if (!GetIsObjectValid(oArmor))
     {
@@ -290,6 +303,7 @@ void RgbOpenWindow(object oPC)
     RgbSelectButton(oPC, nToken, RGB_BIND_CHANNEL, RGB_CHANNELS, 0);
     RgbWindowLoad(oPC, nToken);
     // Watch the controls whose changes the event script acts on.
+    // Watch only after the binds are set, or setting them fires the watch.
     NuiSetBindWatch(oPC, nToken, RGB_BIND_PART, TRUE);
     NuiSetBindWatch(oPC, nToken, RGB_BIND_COLOUR, TRUE);
 }

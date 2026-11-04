@@ -178,7 +178,7 @@ string RgbPartModel(object oCreature, object oArmor, int nModel)
 // Every value is wiped first, once: a value set never goes away on its own,
 // and a reset scoped to one material makes the client restore every
 // material's defaults when it replays the list. Then each part that has a
-// colour gets it. At most 17 parts x 6 channels = 102 values, well under
+// colour gets it. At most 18 parts x 6 channels = 108 values, well under
 // the engine's 1024 per object.
 void RgbApply(object oCreature)
 {

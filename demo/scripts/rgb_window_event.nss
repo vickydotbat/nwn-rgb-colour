@@ -9,11 +9,22 @@ void main()
     string sType = NuiGetEventType();
     string sElement = NuiGetEventElement();
 
+    // Closing the window, or taking off the armor it colours, ends it. With
+    // no armor every store would write to nothing.
+    if (sType == "close" || !GetIsObjectValid(RgbWindowArmor(oPC)))
+    {
+        RgbCloseWindow(oPC);
+        return;
+    }
+
     // A click on the preset grid stores that stock colour, "p" and its row.
     if (sType == "mousedown" && sElement == RGB_ID_GRID)
     {
         int nColour = RgbGridColour(oPC, NuiGetEventPayload());
-        if (nColour >= 0) RgbWindowStore(oPC, nToken, "p" + IntToString(nColour));
+        if (nColour < 0) return;
+        RgbWindowStore(oPC, nToken, "p" + IntToString(nColour));
+        // Reload, so the picker holds the stored value and its echo is known.
+        RgbWindowLoad(oPC, nToken);
         return;
     }
     // A drag starts on mousedown and ends on mouseup. Only a value that
@@ -42,6 +53,8 @@ void main()
         else if (sBase == RGB_BIND_MODE)
         {
             RgbSelectButton(oPC, nToken, RGB_BIND_MODE, RGB_MODES, nIndex);
+            // A new picker or grid replaces the old one: no drag carries over.
+            DeleteLocalString(oPC, RGB_DRAG);
             RgbWindowShowMode(oPC, nToken, nIndex == 1);
         }
         return;

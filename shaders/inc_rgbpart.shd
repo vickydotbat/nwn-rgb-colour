@@ -124,7 +124,7 @@ vec3 RgbAtlas(float row, float intensity)
 
 #if __VERSION__ >= 130
 // The row averaged over `span` columns around the intensity. Columns 256 on
-// hold each row averaged over 2, 4, 8 ... 256 columns (palette-atlas.py), the
+// hold each row averaged over 2, 4, 8 ... 256 columns (tools/rgb_atlas.py), the
 // way the stock bake's mipmaps average a far pixel's colours, so a row that
 // changes at every column (stock row 175's glitter) does not fizz.
 vec3 RgbAtlasLevel(int r, float intensity, int level)

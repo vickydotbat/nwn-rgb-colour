@@ -137,9 +137,7 @@ class BuildTest(unittest.TestCase):
 
     def test_the_mask_ships_without_a_txi_so_it_keeps_its_mipmaps(self):
         out = self.run_build({"pmh0_chest001": "pmh0_chest001"}, ["pmh0_chest001"])
-        # The shader reads the slot id at level 0, which mipmaps never touch,
-        # and the intensity filtered, which needs the mask's mipmaps at a
-        # distance. A mask .txi with mipmap 0 would take them away.
+        # A mask .txi with mipmap 0 would take away the mipmaps the shader needs.
         self.assertFalse((out / "pmh0_chest001_m.txi").exists())
 
     def test_a_binary_right_limb_drawing_the_left_bitmap_names_itself(self):

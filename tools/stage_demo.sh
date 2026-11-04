@@ -20,4 +20,4 @@ cp "$build/rgbdemo.mod" "$user/modules/"
 # development/ outrank the hak, so a quick fix there shows without a repack.
 "$repo/tools/pack_release.sh" "$build/override" "$build/rgbdemo.mod" "$build/dist" >/dev/null
 unzip -o -q -j "$build/dist/nwn-rgb-colour.zip" hak/rgbcolour.hak -d "$user/hak"
-echo "staged $(ls "$build/override" | wc -l) override files and rgbdemo.mod"
+echo "staged $(wc -l < "$staged") override files and rgbdemo.mod"

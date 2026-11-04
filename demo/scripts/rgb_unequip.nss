@@ -1,5 +1,5 @@
 // Module OnPlayerUnEquipItem: take the armor's colours off the player.
-#include "inc_rgb"
+#include "inc_rgbwin"
 
 void main()
 {
@@ -10,4 +10,6 @@ void main()
     // moment. RgbApply then finds no armor and only wipes the values, which
     // a creature would otherwise keep, saved with the character.
     DelayCommand(0.1, RgbApply(oPC));
+    // The colour window colours the worn armor, so it closes with it.
+    RgbCloseWindow(oPC);
 }

@@ -28,7 +28,7 @@ The palette atlas stacks the six stock palettes, 176 rows each, in one TGA bound
 
 A creature holds at most 1024 shader values. The engine drops value 1025 with no error, and the colour never shows. Setting a value never removes one, and the creature saves its list with the character.
 
-So `RgbApply` calls `ResetMaterialShaderUniforms` once with no material, which wipes every value, then writes only what the armor needs. A full outfit is at most 17 parts with 6 colours each: 102 values. Reset everything, not one material. A reset scoped to one material makes the client restore every material's defaults when it replays the list.
+So `RgbApply` calls `ResetMaterialShaderUniforms` once with no material, which wipes every value, then writes only what the armor needs. A full outfit is at most 18 parts with 6 colours each: 108 values. Reset everything, not one material. A reset scoped to one material makes the client restore every material's defaults when it replays the list.
 
 ## Colours that follow the item
 

@@ -41,12 +41,13 @@ def mask_tga(width, height, pixels):
     return struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 24, 0) + bytes(body)
 
 
-def material(part):
+def material(part, mask=None):
     lines = [
         "customshadervs vslit",
         "customshaderfs fs_rgbpart",
         "transparency 1",
-        f"texture6 {part}_m",
+        f"texture6 {mask or part}_m",
+        "texture8 rgb_atlas",
         "parameter float rgbDebug -1",
         "parameter float rgbAtlasMode -1",
         "parameter float rgbAtlasFlip -1",
@@ -58,15 +59,20 @@ def material(part):
     return "\n".join(lines) + "\n"
 
 
+def write_material(plt, name, out):
+    """A slot mask and a material named `name`, from one PLT."""
+    width, height, pixels = read_plt(plt)
+    (out / f"{name}_m.tga").write_bytes(mask_tga(width, height, pixels))
+    # No .txi: the client builds the mask's mipmaps. The shader reads the slot
+    # id at level 0, which mipmaps never touch, and the intensity filtered,
+    # which needs the mipmaps at a distance or it glitters.
+    (out / f"{name}.mtr").write_text(material(name))
+
+
 def build(src, out):
     out.mkdir(parents=True, exist_ok=True)
     for plt in sorted(src.glob("*.plt")):
-        part = plt.stem.lower()
-        width, height, pixels = read_plt(plt)
-        (out / f"{part}_m.tga").write_bytes(mask_tga(width, height, pixels))
-        # A slot id is a category: filtering or mipmapping it mixes slots.
-        (out / f"{part}_m.txi").write_text("mipmap 0\n")
-        (out / f"{part}.mtr").write_text(material(part))
+        write_material(plt, plt.stem.lower(), out)
 
 
 def main(argv):

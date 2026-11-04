@@ -22,10 +22,12 @@ This skill holds the engine rules a change must keep, and the steps for a broken
 
 ## Mask and atlas rules
 
-- **A slot id is a category: read it at the nearest texel, never filtered or mipmapped.** A mask ships as full-size uncompressed TGA with a same-name `.txi` holding `mipmap 0`. BC1, BC3 and half size break slot ids. BC5 keeps them but shifts intensities.
+- **A slot id is a category: read it at the nearest texel, at level 0, never filtered.** A mask ships as a full-size uncompressed TGA with no `.txi`, so the client builds its mipmaps. BC1, BC3 and half size break slot ids. BC5 keeps them but shifts intensities.
+- **A coloured slot reads the mask's intensity filtered, through its mipmaps.** A mask `.txi` with `mipmap 0` takes them away, and coloured armor glitters at a distance.
 - **Blend the finished colour of the four nearest texels** (`rgbSmooth 1`, the default). One texel per pixel fizzes at slot borders. Blending only the intensity makes it worse.
 - **A slot with no value returns the engine's filtered bake** (`texture2D(texUnit0, ...)`), never a `texelFetch`. A level-0 read skips mipmaps and turns plain armor grainy at a distance.
 - **Each mask texel reads its own intensity up close. A far pixel reads the row averaged over the intensities under it.** The atlas holds those averages in the 256 columns past each row. Without them, glitter and rainbow rows fizz.
+- **Colour c of a stock palette is the c-th line from the top, as an image viewer shows it.** A stock `pal_*.tga` has a bottom-left origin and stores its bottom line first, so `rgb_atlas.py` reverses the stored lines. Reading them in file order draws every preset upside down.
 - **The engine uploads a TGA's rows in stored order.** Store atlas row 0 first, so the shader's texel row r is atlas row r, and every material sets `rgbAtlasFlip -1`.
 - **The atlas `.txi` holds `mipmap 0`, `filter 0`, `downsamplemax 0`.** Otherwise rows blend and shrink.
 - **Stock metal 1 and metal 2 both bake from `pal_armor01`.** `pal_armor02` is unused.
@@ -34,6 +36,7 @@ This skill holds the engine rules a change must keep, and the steps for a broken
 ## Window rules
 
 - **Take a picker colour only during a drag.** The stock NUI colour picker fires a watch event before the mouse goes down, and echoes a value the server set.
+- **A drag can end outside the window, where no mouseup reaches the script.** Loading a channel ends any drag, and the picker ignores the value the window just set. A drag left on otherwise takes the next load's echo as a pick and overwrites a stored colour.
 - **A pick updates binds, never rebuilds the scrolling body.** A rebuilt body resets the scroll under the cursor.
 - **A part's own channel value beats the Whole outfit value.**
 - **A look is not a layer.** Stock parts paint leather-looking straps on cloth layers. Check a part's PLT layers before calling a slot wrong.

@@ -25,11 +25,4 @@ done
 (cd "$build/mod" && nwn_erf -e MOD -f "$build/rgbdemo.mod" -c ./*)
 
 if [ -z "$user" ]; then exit 0; fi
-mkdir -p "$user/development" "$user/modules" "$user/hak"
-cp "$build"/override/* "$user/development/"
-cp "$build/rgbdemo.mod" "$user/modules/"
-# The module lists rgbcolour.hak and won't load without it. The copies in
-# development/ outrank the hak, so a quick fix there shows without a repack.
-"$repo/tools/pack_release.sh" "$build/override" "$build/rgbdemo.mod" "$build/dist" >/dev/null
-unzip -o -q -j "$build/dist/nwn-rgb-colour.zip" hak/rgbcolour.hak -d "$user/hak"
-echo "staged $(ls "$build/override" | wc -l) override files and rgbdemo.mod"
+"$repo/tools/stage_demo.sh" "$build" "$user"

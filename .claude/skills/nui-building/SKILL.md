@@ -13,6 +13,7 @@ The client lays out a NUI window with a constraint solver. Size the layout so th
 - **A child's cross-axis size equals its parent's.** In a row, each child is as tall as the row. In a column, each child is as wide as the column.
 - **Children may sum to less than their parent along the layout direction, never more.** Size a parent to what it must hold.
 - **A row or a column never scrolls.** Content past its size fails to build. Repeated rows go in a scrolling `NuiGroup`, and a child of a scrolling group must leave room for the scrollbar.
+- **Stock `NuiToggles` draws each button as wide as the whole control.** Six toggles in a 240-point row overflow it. Build a row of fixed-size `NuiButtonSelect` buttons instead.
 - **A hidden element keeps its place.** `NuiVisible` hides an element but not its space, so count both sides of a swap in the height.
 - **A zero-size `NuiSpacer` still moves the elements after it.** Skip a gap of 0.
 

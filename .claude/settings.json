@@ -1,0 +1,9 @@
+{
+  "extraKnownMarketplaces": {
+    "vicky-skills": {
+      "source": { "source": "github", "repo": "vickydotbat/vicky-skills" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": { "vicky-skills@vicky-skills": true }
+}

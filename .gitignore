@@ -1,0 +1,6 @@
+.todo
+.claude/worktrees/
+.claude/settings.local.json
+build/
+out/
+__pycache__/

@@ -48,6 +48,26 @@ class DemoSourcesTest(unittest.TestCase):
             self.assertEqual(ifo[field]["value"], script)
             self.assertIn("RgbApply", (scripts / f"{script}.nss").read_text())
 
+    def test_D14_the_demo_never_asks_a_player_for_a_console_command(self):
+        enter = (SRC.parent / "scripts" / "rgb_enter.nss").read_text()
+        for word in ("DebugMode", "dm_runscript", "~"):
+            self.assertNotIn(word, enter.split("void main()")[1])
+
+    def test_a_placeable_in_the_demo_room_opens_the_colour_window(self):
+        scripts = SRC.parent / "scripts"
+        enter = (scripts / "rgb_enter.nss").read_text()
+        self.assertIn("EVENT_SCRIPT_PLACEABLE_ON_USED", enter)
+        self.assertIn('"rgb_window_open"', enter)
+        self.assertIn("RgbOpenWindow", (scripts / "rgb_window_open.nss").read_text())
+
+    def test_E16_no_window_script_swaps_a_part_model(self):
+        sources = [SRC.parent.parent / "nss" / "inc_rgbwin.nss"] + sorted((SRC.parent / "scripts").glob("rgb_window*.nss"))
+        self.assertGreaterEqual(len(sources), 3)
+        for path in sources:
+            text = path.read_text()
+            for call in ("SetItemAppearance", "CopyItemAndModify"):
+                self.assertNotIn(call, text, path.name)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -39,6 +39,15 @@ class ReleaseTest(unittest.TestCase):
         names = set(zipfile.ZipFile(archive).namelist())
         self.assertLessEqual({"hak/rgbcolour.hak", "modules/rgbdemo.mod", "README.txt", "census.txt"}, names)
 
+    def test_the_zip_holds_what_a_builder_needs_to_use_it_in_their_own_module(self):
+        archive, _ = self.pack()
+        names = set(zipfile.ZipFile(archive).namelist())
+        for name in ("source/README.md", "source/LICENSE", "source/docs/how-it-works.md", "source/docs/helmets.md",
+                     "source/nss/inc_rgb.nss", "source/nss/inc_rgbwin.nss", "source/demo/scripts/rgb_enter.nss",
+                     "source/demo/scripts/rgb_window_event.nss", "source/shaders/inc_rgbpart.shd",
+                     "source/tools/rgb_materials.py", "source/data/rgb_palettes.2da"):
+            self.assertIn(name, names)
+
     def test_the_hak_holds_every_built_file_but_the_census(self):
         archive, tmp = self.pack()
         zipfile.ZipFile(archive).extract("hak/rgbcolour.hak", tmp)

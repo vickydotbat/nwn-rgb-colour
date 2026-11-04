@@ -21,6 +21,17 @@ nwn_erf -e HAK -f "$stage/hak/rgbcolour.hak" -c "$work/hak"
 cp "$mod" "$stage/modules/rgbdemo.mod"
 cp "$override/census.txt" "$stage/census.txt"
 cp "$repo/tools/release-readme.txt" "$stage/README.txt"
+# What a builder needs to use this in their own module: the docs, the
+# scripts to copy, the shaders, the palette table and the convert tool.
+mkdir -p "$stage/source/docs" "$stage/source/nss" "$stage/source/demo/scripts" "$stage/source/shaders" \
+    "$stage/source/tools" "$stage/source/data"
+cp "$repo/README.md" "$repo/LICENSE" "$stage/source/"
+cp "$repo"/docs/*.md "$stage/source/docs/"
+cp "$repo"/nss/*.nss "$stage/source/nss/"
+cp "$repo"/demo/scripts/*.nss "$stage/source/demo/scripts/"
+cp "$repo"/shaders/*.shd "$stage/source/shaders/"
+cp "$repo/tools/rgb_materials.py" "$stage/source/tools/"
+cp "$repo"/data/*.2da "$stage/source/data/"
 # Screenshots worth showing go in docs/screenshots.
 shots=("$repo"/docs/screenshots/*.png)
 if [ -e "${shots[0]}" ]; then

@@ -9,6 +9,13 @@ To try the demo:
 3. Start the game and load the RGB colour demo.
 4. Use the easel beside you to open the colour window.
 
+To use it in your own module, start with source/README.md and
+source/docs/how-it-works.md. source/ holds the scripts to copy, the
+shaders, the palette table and tools/rgb_materials.py, which makes your
+own PLT parts RGB-ready:
+
+    python3 tools/rgb_materials.py <folder of .plt files> --out <folder>
+
 census.txt lists the stock parts the build skipped, and why.
 
 Source, docs and the scripts to use in your own module:

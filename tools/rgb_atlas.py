@@ -44,6 +44,31 @@ def averaged(row):
     return out + [out[-1]]
 
 
+# The preset grids the colour window shows: one cell per stock colour, 16
+# across and 11 down, each filled with the colour at intensity 188, as the
+# toolset's swatches look. Only the palettes an item colour uses get one.
+GRID_PALETTES = ["armor", "cloth", "leath"]
+GRID_COLS, GRID_ROWS = 16, 11
+CELL_W, CELL_H = 18, 13
+SWATCH_INTENSITY = 188
+BORDER = (16, 16, 16)
+
+
+def grid_tga(rows):
+    width, height = GRID_COLS * CELL_W, GRID_ROWS * CELL_H
+    lines = []
+    for y in range(height):
+        line = bytearray()
+        for x in range(width):
+            colour = (y // CELL_H) * GRID_COLS + x // CELL_W
+            edge = x % CELL_W == CELL_W - 1 or y % CELL_H == CELL_H - 1
+            line += bytes(BORDER if edge or colour >= len(rows) else rows[colour][SWATCH_INTENSITY])
+        lines.append(bytes(line))
+    # A bottom-left origin TGA stores its bottom line first.
+    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 24, 0)
+    return header + b"".join(reversed(lines))
+
+
 def build(src, out):
     rows = []
     for name in PALETTES:
@@ -57,6 +82,8 @@ def build(src, out):
     header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, 2 * WIDTH, len(rows), 24, 0)
     (out / "rgb_atlas.tga").write_bytes(header + bytes(body))
     (out / "rgb_atlas.txi").write_text("mipmap 0\nfilter 0\ndownsamplemax 0\n")
+    for name in GRID_PALETTES:
+        (out / f"gridv_{name}01.tga").write_bytes(grid_tga(read_palette(src / f"pal_{name}01.tga")))
 
 
 def main(argv):

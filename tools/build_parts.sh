@@ -19,3 +19,6 @@ python3 "$repo/tools/rgb_build.py" "$raw" "$raw" --out "$out"
 # The palette atlas, from the stock palettes, for preset colours.
 nwn_resman_extract --root "$game" --quiet -p pal_ -d "$raw" >/dev/null
 python3 "$repo/tools/rgb_atlas.py" "$raw" --out "$out"
+
+# The colour window's preset grid reads which stock palette each colour uses.
+cp "$repo/data/rgb_palettes.2da" "$out/"

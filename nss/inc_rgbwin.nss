@@ -7,14 +7,14 @@
 // Layout, top to bottom:
 //   Part:    a list of Whole outfit and every part the armor shows
 //   Colour:  1 to 6, the item's colours in toolset order
-//   Mode:    RGB (any colour) or Presets (a stock palette row)
-//   a colour picker for RGB, or a row slider for Presets
+//   Mode:    RGB (any colour) or Presets (a stock palette colour)
+//   a colour picker for RGB, or a grid of the stock colours for Presets
 //
 // NUI sends a "watch" event whenever a bound value changes, including when
 // the server sets it. The stock colour picker also sends one before the
 // mouse goes down, and echoes values the server set. So the window only
-// takes a picker or slider value while the player is dragging it: a
-// mousedown on the control starts a drag and a mouseup ends it.
+// takes a picker value while the player is dragging it: a mousedown on the
+// picker starts a drag and a mouseup ends it.
 #include "inc_rgb"
 #include "nw_inc_nui"
 
@@ -29,14 +29,36 @@ const string RGB_BIND_PART = "part";
 const string RGB_BIND_CHANNEL = "chan";
 const string RGB_BIND_MODE = "mode";
 const string RGB_BIND_COLOUR = "col";
-const string RGB_BIND_ROW = "row";
-const string RGB_BIND_ROW_LABEL = "row_label";
-const string RGB_BIND_IS_RGB = "is_rgb";
-const string RGB_BIND_IS_PRESET = "is_preset";
 const string RGB_ID_PICKER = "picker";
-const string RGB_ID_SLIDER = "slider";
+const string RGB_ID_GRID = "grid";
+const string RGB_ID_SLOT = "slot";
 // The control a player is dragging, kept on the player.
 const string RGB_DRAG = "RGB_DRAG";
+
+// Window sizes, in points. The client draws a window at exactly the size it
+// is given and never shrinks it to fit. So every element gets a width, a
+// height, and no margin or padding: the engine adds a default margin on top
+// of a declared size, and a row sized to fit its children then can't hold
+// them. A row's children are as tall as the row.
+const float RGB_WIN_WIDTH = 300.0;   // the content, inside the frame
+const float RGB_ROW = 28.0;          // one row of controls
+const float RGB_LABEL = 60.0;        // the label column
+const float RGB_PICKER = 143.0;      // the picker or the grid's height
+// The preset grid: 16 x 11 cells, one per stock colour. Each cell is
+// 18 x 13 points, matching the grid images the build writes.
+const int RGB_GRID_COLS = 16;
+const float RGB_CELL_W = 18.0;
+const float RGB_CELL_H = 13.0;
+const float RGB_GAP = 4.0;           // the space under each row
+// The frame around the content: the title bar on top, the border sides.
+const float RGB_TITLE_BAR = 33.0;
+const float RGB_FRAME_SIDES = 20.0;
+
+// An element at exactly w x h, with no margin or padding.
+json RgbSized(json jElem, float fWidth, float fHeight)
+{
+    return NuiPadding(NuiMargin(NuiHeight(NuiWidth(jElem, fWidth), fHeight), 0.0), 0.0);
+}
 
 // The armor the window colours.
 object RgbWindowArmor(object oPC)
@@ -89,11 +111,36 @@ int RgbWindowChannel(object oPC, int nToken)
     return GetLocalInt(oPC, RGB_BIND_CHANNEL) + 1;
 }
 
-// Show one of the two controls, the picker or the slider.
+// Fill the slot under the buttons: the picker, or the grid of stock colours
+// for the palette the current colour uses, from rgb_palettes.2da.
 void RgbWindowShowMode(object oPC, int nToken, int bPreset)
 {
-    NuiSetBind(oPC, nToken, RGB_BIND_IS_RGB, JsonBool(!bPreset));
-    NuiSetBind(oPC, nToken, RGB_BIND_IS_PRESET, JsonBool(bPreset));
+    json jSlot;
+    if (bPreset)
+    {
+        string sGrid = Get2DAString("rgb_palettes", "Grid", RgbWindowChannel(oPC, nToken) - 1);
+        jSlot = NuiImage(JsonString(sGrid), JsonInt(NUI_ASPECT_EXACT), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_TOP));
+        jSlot = RgbSized(NuiId(jSlot, RGB_ID_GRID), RGB_WIN_WIDTH, RGB_PICKER);
+    }
+    else
+        jSlot = RgbSized(NuiId(NuiColorPicker(NuiBind(RGB_BIND_COLOUR)), RGB_ID_PICKER), RGB_WIN_WIDTH, RGB_PICKER);
+    // Swapping one group's layout keeps the rest of the window as it is.
+    NuiSetGroupLayout(oPC, nToken, RGB_ID_SLOT, jSlot);
+}
+
+// The stock colour under a click on the grid, or -1 between cells. The
+// client reports the click in screen pixels from the grid's top left,
+// scaled by the player's UI scale, so divide that out first.
+int RgbGridColour(object oPC, json jPayload)
+{
+    json jPos = JsonObjectGet(jPayload, "mouse_pos");
+    float fScale = IntToFloat(GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0;
+    if (fScale <= 0.0) fScale = 1.0;
+    int nCol = FloatToInt(JsonGetFloat(JsonObjectGet(jPos, "x")) / fScale / RGB_CELL_W);
+    int nRow = FloatToInt(JsonGetFloat(JsonObjectGet(jPos, "y")) / fScale / RGB_CELL_H);
+    if (nCol < 0 || nCol >= RGB_GRID_COLS || nRow < 0) return -1;
+    int nColour = nRow * RGB_GRID_COLS + nCol;
+    return nColour < 176 ? nColour : -1;
 }
 
 // Light button nValue of a button row and unlight the rest.
@@ -106,18 +153,15 @@ void RgbSelectButton(object oPC, int nToken, string sBind, int nCount, int nValu
 
 // Fill the controls with the stored value of the part and channel shown.
 // Setting a bind sends a watch event back, so the event script ignores
-// picker and slider values unless the player is dragging them.
+// picker values unless the player is dragging it.
 void RgbWindowLoad(object oPC, int nToken)
 {
     json jColours = RgbGetColours(RgbWindowArmor(oPC));
     string sValue = RgbChannelValue(jColours, RgbWindowKey(oPC, nToken), RgbWindowChannel(oPC, nToken));
     int bPreset = GetStringLeft(sValue, 1) == "p";
-    int nRow = bPreset ? RgbPresetRow(sValue) : 0;
     int nPacked = bPreset || sValue == "" ? 0 : FloatToInt(RgbParseHex(sValue));
     RgbSelectButton(oPC, nToken, RGB_BIND_MODE, 2, bPreset);
     NuiSetBind(oPC, nToken, RGB_BIND_COLOUR, NuiColor(nPacked / 65536, (nPacked / 256) % 256, nPacked % 256));
-    NuiSetBind(oPC, nToken, RGB_BIND_ROW, JsonInt(nRow));
-    NuiSetBind(oPC, nToken, RGB_BIND_ROW_LABEL, JsonString(IntToString(nRow)));
     RgbWindowShowMode(oPC, nToken, bPreset);
 }
 
@@ -134,26 +178,6 @@ void RgbWindowStore(object oPC, int nToken, string sValue)
     RgbApply(oPC);
 }
 
-
-// Window sizes, in points. The client draws a window at exactly the size it
-// is given and never shrinks it to fit. So every element gets a width, a
-// height, and no margin or padding: the engine adds a default margin on top
-// of a declared size, and a row sized to fit its children then can't hold
-// them. A row's children are as tall as the row.
-const float RGB_WIN_WIDTH = 300.0;   // the content, inside the frame
-const float RGB_ROW = 28.0;          // one row of controls
-const float RGB_LABEL = 60.0;        // the label column
-const float RGB_PICKER = 140.0;      // the colour picker's height
-const float RGB_GAP = 4.0;           // the space under each row
-// The frame around the content: the title bar on top, the border sides.
-const float RGB_TITLE_BAR = 33.0;
-const float RGB_FRAME_SIDES = 20.0;
-
-// An element at exactly w x h, with no margin or padding.
-json RgbSized(json jElem, float fWidth, float fHeight)
-{
-    return NuiPadding(NuiMargin(NuiHeight(NuiWidth(jElem, fWidth), fHeight), 0.0), 0.0);
-}
 
 // A row: a label, then one control filling the rest of the width.
 json RgbFormRow(string sLabel, json jControl)
@@ -205,15 +229,10 @@ void RgbOpenWindow(object oPC)
         jChannels = JsonArrayInsert(jChannels, JsonString(IntToString(i)));
     json jModes = JsonArrayInsert(JsonArrayInsert(JsonArray(), JsonString("RGB")), JsonString("Presets"));
 
-    // The picker and the slider row share one slot: only one shows at a time.
-    json jPicker = NuiVisible(RgbSized(NuiId(NuiColorPicker(NuiBind(RGB_BIND_COLOUR)), RGB_ID_PICKER),
-                                       RGB_WIN_WIDTH, RGB_PICKER), NuiBind(RGB_BIND_IS_RGB));
-    json jSliderRow = JsonArrayInsert(JsonArrayInsert(JsonArray(),
-        RgbSized(NuiId(NuiSlider(NuiBind(RGB_BIND_ROW), JsonInt(0), JsonInt(175), JsonInt(1)), RGB_ID_SLIDER),
-                 RGB_WIN_WIDTH - RGB_LABEL, RGB_ROW)),
-        RgbSized(NuiLabel(NuiBind(RGB_BIND_ROW_LABEL), JsonInt(NUI_HALIGN_RIGHT), JsonInt(NUI_VALIGN_MIDDLE)),
-                 RGB_LABEL, RGB_ROW));
-    json jSlider = NuiVisible(RgbSized(NuiRow(jSliderRow), RGB_WIN_WIDTH, RGB_ROW), NuiBind(RGB_BIND_IS_PRESET));
+    // The picker and the preset grid share one slot: a group whose layout
+    // RgbWindowShowMode swaps.
+    json jSlot = RgbSized(NuiId(NuiGroup(RgbSized(NuiSpacer(), RGB_WIN_WIDTH, RGB_PICKER), FALSE, NUI_SCROLLBARS_NONE),
+                                RGB_ID_SLOT), RGB_WIN_WIDTH, RGB_PICKER);
 
     json jColumn = JsonArray();
     jColumn = JsonArrayInsert(jColumn, RgbFormRow("Part", NuiCombo(RgbWindowParts(oArmor), NuiBind(RGB_BIND_PART))));
@@ -222,12 +241,10 @@ void RgbOpenWindow(object oPC)
     jColumn = JsonArrayInsert(jColumn, RgbGap());
     jColumn = JsonArrayInsert(jColumn, RgbButtonRow("Mode", jModes, RGB_BIND_MODE, 80.0));
     jColumn = JsonArrayInsert(jColumn, RgbGap());
-    jColumn = JsonArrayInsert(jColumn, jPicker);
-    jColumn = JsonArrayInsert(jColumn, jSlider);
+    jColumn = JsonArrayInsert(jColumn, jSlot);
 
-    // The column holds three rows with their gaps, then the picker or the
-    // slider. Hidden or not, both keep their place, so count both.
-    float fHeight = 3.0 * (RGB_ROW + RGB_GAP) + RGB_PICKER + RGB_ROW;
+    // The column holds three rows with their gaps, then the slot.
+    float fHeight = 3.0 * (RGB_ROW + RGB_GAP) + RGB_PICKER;
     // The root is a group with scrollbars off: the window is sized to hold
     // it, so it never needs them.
     json jRoot = RgbSized(NuiGroup(RgbSized(NuiCol(jColumn), RGB_WIN_WIDTH, fHeight), FALSE, NUI_SCROLLBARS_NONE),
@@ -244,5 +261,4 @@ void RgbOpenWindow(object oPC)
     // Watch the controls whose changes the event script acts on.
     NuiSetBindWatch(oPC, nToken, RGB_BIND_PART, TRUE);
     NuiSetBindWatch(oPC, nToken, RGB_BIND_COLOUR, TRUE);
-    NuiSetBindWatch(oPC, nToken, RGB_BIND_ROW, TRUE);
 }

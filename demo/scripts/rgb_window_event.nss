@@ -9,9 +9,16 @@ void main()
     string sType = NuiGetEventType();
     string sElement = NuiGetEventElement();
 
+    // A click on the preset grid stores that stock colour, "p" and its row.
+    if (sType == "mousedown" && sElement == RGB_ID_GRID)
+    {
+        int nColour = RgbGridColour(oPC, NuiGetEventPayload());
+        if (nColour >= 0) RgbWindowStore(oPC, nToken, "p" + IntToString(nColour));
+        return;
+    }
     // A drag starts on mousedown and ends on mouseup. Only a value that
     // changes during a drag comes from the player.
-    if (sType == "mousedown" && (sElement == RGB_ID_PICKER || sElement == RGB_ID_SLIDER))
+    if (sType == "mousedown" && sElement == RGB_ID_PICKER)
     {
         SetLocalString(oPC, RGB_DRAG, sElement);
         return;
@@ -55,12 +62,5 @@ void main()
                           + RgbHexByte(JsonGetInt(JsonObjectGet(jColour, "g")))
                           + RgbHexByte(JsonGetInt(JsonObjectGet(jColour, "b")));
         RgbWindowStore(oPC, nToken, sHex);
-    }
-    else if (sElement == RGB_BIND_ROW && sDrag == RGB_ID_SLIDER)
-    {
-        int nRow = JsonGetInt(NuiGetBind(oPC, nToken, RGB_BIND_ROW));
-        NuiSetBind(oPC, nToken, RGB_BIND_ROW_LABEL, JsonString(IntToString(nRow)));
-        // A preset is stored as "p" and its row.
-        RgbWindowStore(oPC, nToken, "p" + IntToString(nRow));
     }
 }

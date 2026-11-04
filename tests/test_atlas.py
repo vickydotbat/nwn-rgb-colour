@@ -104,6 +104,24 @@ class AtlasTest(unittest.TestCase):
                        capture_output=True)
         self.assertEqual(stored_row(tmp / "o" / "rgb_atlas.tga", 0)[:256], plain)
 
+    def test_each_stock_grid_cell_shows_its_palette_row(self):
+        src, out = self.build()
+        grid = out / "gridv_cloth01.tga"
+        data = grid.read_bytes()
+        width, height = struct.unpack("<HH", data[12:14] + data[14:16])
+        self.assertEqual((width, height), (288, 143))
+        # Colour 23 is cell (column 7, row 1): 18 x 13 points each, drawn
+        # top down. The file stores its bottom line first.
+        colour, x, y = 23, 7 * 18 + 9, 1 * 13 + 6
+        line = height - 1 - y
+        pixel = tuple(data[18 + (line * width + x) * 3:18 + (line * width + x) * 3 + 3])
+        self.assertEqual(pixel, stored_row(src / "pal_cloth01.tga", colour)[188])
+
+    def test_there_is_a_grid_for_each_palette_a_channel_uses(self):
+        _, out = self.build()
+        for name in ("gridv_armor01", "gridv_cloth01", "gridv_leath01"):
+            self.assertTrue((out / f"{name}.tga").exists(), name)
+
     def test_every_part_material_binds_the_atlas(self):
         self.assertIn("texture8 rgb_atlas", rgb_materials.material("pmh0_chest001").splitlines())
 

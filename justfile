@@ -23,7 +23,7 @@ compile folder="demo" out="build/ncs":
     nwn_script_comp "${root[@]}" --dirs nss -d "{{out}}" -y -R -c "{{folder}}"
 
 # Build the overrides and the demo module, and stage them in the game's
-# user folder (development/ and modules/).
+# user folder (development/ and modules/) for a live check.
 demo game user:
     tools/build_demo.sh "{{game}}" "{{user}}"
 
@@ -36,3 +36,8 @@ convert folder:
 # PLTs. census.txt in the output lists each part it skipped and why.
 build game out="build/parts":
     tools/build_parts.sh "{{game}}" "{{out}}"
+
+# Build the release zip for the v* tag on HEAD and attach it to a draft
+# GitHub Release. Run on main, on a machine with the game installed.
+release game:
+    tools/release.sh "{{game}}"

@@ -16,7 +16,7 @@ PACK = REPO / "tools" / "pack_release.sh"
 
 @unittest.skipUnless(shutil.which("nwn_erf"), "nwn_erf comes with the dev shell")
 class ReleaseTest(unittest.TestCase):
-    def pack(self):
+    def pack(self, extra=0):
         holder = tempfile.TemporaryDirectory()
         self.addCleanup(holder.cleanup)
         tmp = pathlib.Path(holder.name)
@@ -24,6 +24,8 @@ class ReleaseTest(unittest.TestCase):
         override.mkdir()
         for name in ("pmh0_chest001.mtr", "pmh0_chest001_m.tga", "rgb_atlas.tga", "fs_rgbpart.shd", "rgb_parts.txt"):
             (override / name).write_bytes(b"x")
+        for i in range(extra):
+            (override / f"pmh0_shin{i:07d}.mtr").write_bytes(b"x")
         (override / "census.txt").write_text("pmh0_robe001: robes keep their stock PLT colours\n")
         mod = tmp / "rgbdemo.mod"
         mod.write_bytes(b"MOD V1.0")
@@ -45,6 +47,14 @@ class ReleaseTest(unittest.TestCase):
         for name in ("pmh0_chest001.mtr", "pmh0_chest001_m.tga", "rgb_atlas.tga", "fs_rgbpart.shd", "rgb_parts.txt"):
             self.assertIn(name, listing)
         self.assertNotIn("census.txt", listing)
+
+    def test_a_build_of_thousands_of_files_all_reach_the_hak(self):
+        archive, tmp = self.pack(extra=9000)
+        zipfile.ZipFile(archive).extract("hak/rgbcolour.hak", tmp)
+        listing = subprocess.run(["nwn_erf", "-f", str(tmp / "hak" / "rgbcolour.hak"), "-t"],
+                                 capture_output=True, text=True, check=True).stdout.split()
+        self.assertIn("pmh0_shin0000000.mtr", listing)
+        self.assertIn("pmh0_shin0008999.mtr", listing)
 
 
 class DemoHakTest(unittest.TestCase):

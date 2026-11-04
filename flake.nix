@@ -36,6 +36,7 @@
         packages = [
           (pkgs.python3.withPackages (ps: [ ps.pillow ps.numpy ]))
           pkgs.just
+          pkgs.unzip
           neverwinter
         ];
       };

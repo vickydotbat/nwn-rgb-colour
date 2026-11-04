@@ -8,9 +8,9 @@ import unittest
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
 
-def compile_dir(folder):
+def compile_dir(folder, out):
     return subprocess.run(
-        ["just", "compile", str(folder)],
+        ["just", "compile", str(folder), str(out)],
         cwd=REPO, capture_output=True, text=True,
     )
 
@@ -21,7 +21,7 @@ class CompileTest(unittest.TestCase):
             folder = pathlib.Path(tmp)
             (folder / "good.nss").write_text("void main() {}\n")
             (folder / "broken.nss").write_text("void main()\n{\n    int a = ;\n}\n")
-            result = compile_dir(folder)
+            result = compile_dir(folder, folder / "out")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("broken.nss(3)", result.stdout + result.stderr)
 
@@ -30,10 +30,10 @@ class CompileTest(unittest.TestCase):
             folder = pathlib.Path(tmp)
             (folder / "good.nss").write_text(
                 'void main() { SetLocalInt(OBJECT_SELF, "a", 1); }\n')
-            result = compile_dir(folder)
+            result = compile_dir(folder, folder / "out")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertFalse((folder / "good.ncs").exists())
-        self.assertTrue((REPO / "build" / "ncs" / "good.ncs").exists())
+            self.assertTrue((folder / "out" / "good.ncs").exists())
 
 
 if __name__ == "__main__":

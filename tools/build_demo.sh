@@ -12,7 +12,6 @@ mkdir -p "$build/plt" "$build/override" "$build/mod"
 
 # Stock chest PLTs, out of the game's own data.
 nwn_resman_extract --root "$game" -p _chest -d "$build/plt" >/dev/null
-find "$build/plt" -type f ! -name '*.plt' -delete
 python3 "$repo/tools/rgb_materials.py" "$build/plt" --out "$build/override"
 cp "$repo"/shaders/*.shd "$build/override/"
 

@@ -14,13 +14,14 @@ import struct
 import sys
 from pathlib import Path
 
+# The shader has 12 slots: the 10 PLT layers and 2 accent slots.
 SLOTS = 12
 SLOT_STEP = 16
 LAST_LAYER = 9
 
 
 def read_plt(path):
-    """-> (width, height, pixel bytes as intensity, layer pairs)."""
+    """-> (width, height, pixels): two bytes per pixel, intensity then layer."""
     data = path.read_bytes()
     if data[:8] != b"PLT V1  ":
         raise ValueError(f"{path.name}: not a PLT V1 file")

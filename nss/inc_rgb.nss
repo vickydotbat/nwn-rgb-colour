@@ -1,11 +1,6 @@
-// inc_rgb: the few calls a script needs to colour one worn part.
-//
-// How it works, in short. The engine bakes a PLT part's colours before the
-// lighting shader runs, so the shader never sees which layer a pixel belongs
-// to. Each part therefore gets a slot mask (a copy of its PLT the shader can
-// read) and a material, a .mtr file named after the part. The material swaps
-// in the RGB part shader and declares one parameter per slot. A script then
-// sets those parameters on the creature wearing the part.
+// inc_rgb: the calls a script needs to colour one worn part.
+// Each part's material (a .mtr named after the part) declares one shader
+// parameter per slot, and a script sets them on the creature wearing it.
 
 // Slots are the PLT layers, in the engine's own order.
 const int RGB_SLOT_SKIN     = 0;
@@ -49,10 +44,8 @@ void RgbSetSlot(object oCreature, string sMaterial, int nSlot, float fColour)
     SetMaterialShaderUniformVec4(oCreature, sMaterial, "rgbC" + IntToString(nSlot), fColour);
 }
 
-// Clear every colour on a creature, so each part draws its stock PLT colours.
-// Off is -1, never 0: a 0 does not replace an earlier value. A full reset is
-// simpler still, and it is the only reset that leaves no material behind.
-void RgbClearAll(object oCreature)
+// The player a dm_runscript call means: it may run on the module, not the player.
+object RgbCaller()
 {
-    ResetMaterialShaderUniforms(oCreature);
+    return GetIsPC(OBJECT_SELF) ? OBJECT_SELF : GetFirstPC();
 }

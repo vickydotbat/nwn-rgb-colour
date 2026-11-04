@@ -28,7 +28,9 @@ def read_tga(path):
 
 class MaterialTest(unittest.TestCase):
     def build(self, pixels, width, height, name="pmh0_chest007"):
-        tmp = pathlib.Path(tempfile.mkdtemp())
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
         src, out = tmp / "in", tmp / "out"
         src.mkdir()
         write_plt(src / f"{name}.plt", pixels, width, height)
@@ -63,8 +65,20 @@ class MaterialTest(unittest.TestCase):
         for slot in range(12):
             self.assertIn(f"parameter float rgbC{slot} -1", mtr)
 
+    def test_a_plt_shorter_than_its_header_says_is_refused(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
+        (tmp / "short.plt").write_bytes(b"PLT V1  " + bytes(8) + struct.pack("<II", 2, 2) + bytes(2))
+        result = subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")],
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("short.plt", result.stderr)
+
     def test_a_file_that_is_not_a_plt_is_refused(self):
-        tmp = pathlib.Path(tempfile.mkdtemp())
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
         # Right size for a 1x1 PLT, wrong signature.
         (tmp / "bad.plt").write_bytes(b"TGA V1  " + bytes(8) + struct.pack("<II", 1, 1) + bytes(2))
         result = subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")],

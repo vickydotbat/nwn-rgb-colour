@@ -3,8 +3,8 @@
 
 void main()
 {
-    // dm_runscript may run on the module, so fall back to the first player.
-    object oPC = GetIsPC(OBJECT_SELF) ? OBJECT_SELF : GetFirstPC();
+    // The player who ran the script.
+    object oPC = RgbCaller();
     // The material is named after the chest model the player wears.
     string sMaterial = RgbChestMaterial(oPC);
     RgbSetSlot(oPC, sMaterial, RGB_SLOT_CLOTH1, RgbPack(139, 0, 0));

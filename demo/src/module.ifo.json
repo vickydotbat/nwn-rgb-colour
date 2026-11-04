@@ -1,0 +1,71 @@
+{
+ "__data_type": "IFO ",
+ "Mod_Area_list": {
+  "type": "list",
+  "value": [
+   {
+    "__struct_id": 6,
+    "Area_Name": {
+     "type": "resref",
+     "value": "rgbdemo"
+    }
+   }
+  ]
+ },
+ "Mod_Entry_Area": {
+  "type": "resref",
+  "value": "rgbdemo"
+ },
+ "Mod_Entry_X": {
+  "type": "float",
+  "value": 10.0
+ },
+ "Mod_Entry_Y": {
+  "type": "float",
+  "value": 10.0
+ },
+ "Mod_Entry_Z": {
+  "type": "float",
+  "value": 0.0
+ },
+ "Mod_Entry_Dir_X": {
+  "type": "float",
+  "value": 0.0
+ },
+ "Mod_Entry_Dir_Y": {
+  "type": "float",
+  "value": -1.0
+ },
+ "Mod_Name": {
+  "type": "cexolocstring",
+  "value": {
+   "0": "RGB colour demo"
+  }
+ },
+ "Mod_Description": {
+  "type": "cexolocstring",
+  "value": {
+   "0": "Colour worn parts in any RGB colour, with NWScript alone."
+  }
+ },
+ "Mod_Tag": {
+  "type": "cexostring",
+  "value": "rgbdemo"
+ },
+ "Mod_HakList": {
+  "type": "list",
+  "value": []
+ },
+ "Mod_MinGameVer": {
+  "type": "cexostring",
+  "value": "1.69"
+ },
+ "Mod_OnClientEntr": {
+  "type": "resref",
+  "value": "rgb_enter"
+ },
+ "Mod_XPScale": {
+  "type": "byte",
+  "value": 10
+ }
+}

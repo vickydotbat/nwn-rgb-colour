@@ -1,0 +1,25 @@
+//=============================================================================
+//
+// fs_rgbpart_nm.shd -- RGB slots for an armor part, keeping the part's normal map (texture1) and specular map (texture2).
+// The slots and their parameters are in inc_rgbpart.
+//
+//=============================================================================
+
+#define SHADER_TYPE 2
+
+#define FOG 1
+#define KEYHOLING 1
+#define LIGHTING 1
+
+// The engine also compiles a NO_DISCARD variant, where inc_common turns
+// `discard` into nothing; the cut-out needs it kept.
+#define FORCE_ALLOW_DISCARD 1
+
+#define NORMAL_MAP 1
+#define SPECULAR_MAP 1
+#define ROUGHNESS_MAP 0
+#define HEIGHT_MAP 0
+#define SELF_ILLUMINATION_MAP 0
+#define ENVIRONMENT_MAP 0
+
+#include "inc_rgbpart"

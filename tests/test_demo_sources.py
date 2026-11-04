@@ -23,7 +23,8 @@ class DemoSourcesTest(unittest.TestCase):
         self.assertEqual(fields, {
             "Mod_Area_list", "Mod_Entry_Area", "Mod_Entry_X", "Mod_Entry_Y", "Mod_Entry_Z",
             "Mod_Entry_Dir_X", "Mod_Entry_Dir_Y", "Mod_Name", "Mod_Description", "Mod_Tag",
-            "Mod_HakList", "Mod_MinGameVer", "Mod_OnClientEntr", "Mod_XPScale",
+            "Mod_HakList", "Mod_MinGameVer", "Mod_OnClientEntr", "Mod_OnPlrEqItm", "Mod_OnPlrUnEqItm",
+            "Mod_XPScale",
         })
 
     def test_every_area_the_module_names_is_its_own(self):
@@ -37,6 +38,15 @@ class DemoSourcesTest(unittest.TestCase):
         are = load("rgbdemo.are.json")
         for key in ("OnEnter", "OnExit", "OnHeartbeat", "OnUserDefined", "Comments", "ID", "Creator_ID"):
             self.assertNotIn(key, are)
+
+
+    def test_E9_to_E11_colours_reapply_on_entry_and_follow_the_item(self):
+        ifo = load("module.ifo.json")
+        scripts = SRC.parent / "scripts"
+        for field, script in (("Mod_OnClientEntr", "rgb_enter"), ("Mod_OnPlrEqItm", "rgb_equip"),
+                              ("Mod_OnPlrUnEqItm", "rgb_unequip")):
+            self.assertEqual(ifo[field]["value"], script)
+            self.assertIn("RgbApply", (scripts / f"{script}.nss").read_text())
 
 
 if __name__ == "__main__":

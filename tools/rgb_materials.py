@@ -47,6 +47,7 @@ def material(part, mask=None):
         "customshaderfs fs_rgbpart",
         "transparency 1",
         f"texture6 {mask or part}_m",
+        "texture8 rgb_atlas",
         "parameter float rgbDebug -1",
         "parameter float rgbAtlasMode -1",
         "parameter float rgbAtlasFlip -1",

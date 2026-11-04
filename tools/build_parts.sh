@@ -15,3 +15,7 @@ for slot in belt bicep chest foot fore hand leg neck pelvis robe shin sho; do
     nwn_resman_extract --root "$game" --erfs "${haks%,}" --quiet -p "_$slot" -d "$raw" >/dev/null
 done
 python3 "$repo/tools/rgb_build.py" "$raw" "$raw" --out "$out"
+
+# The palette atlas, from the stock palettes, for preset colours.
+nwn_resman_extract --root "$game" --quiet -p pal_ -d "$raw" >/dev/null
+python3 "$repo/tools/rgb_atlas.py" "$raw" --out "$out"

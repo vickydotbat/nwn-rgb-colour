@@ -60,6 +60,25 @@ void RgbSetSlot(object oCreature, string sMaterial, int nSlot, float fColour)
     SetMaterialShaderUniformVec4(oCreature, sMaterial, "rgbC" + IntToString(nSlot), fColour);
 }
 
+// The first atlas row of each slot's stock palette. The atlas stacks the
+// six stock palettes, 176 rows each: skin, hair, metal, cloth, leather,
+// tattoo. Metal 1 and metal 2 share the metal palette, as stock does.
+int RgbPaletteBase(int nSlot)
+{
+    int nPalette;
+    if (nSlot <= RGB_SLOT_METAL2) nPalette = nSlot == RGB_SLOT_METAL2 ? 2 : nSlot;
+    else nPalette = 3 + (nSlot - RGB_SLOT_CLOTH1) / 2;
+    return nPalette * 176;
+}
+
+// Set one slot of one part to stock palette row nRow (0-175), the colour
+// the toolset's swatch nRow gives. The shader reads it from the atlas.
+void RgbSetPreset(object oCreature, string sMaterial, int nSlot, int nRow)
+{
+    SetMaterialShaderUniformVec4(oCreature, sMaterial, "rgbP" + IntToString(nSlot),
+                                 IntToFloat(RgbPaletteBase(nSlot) + nRow));
+}
+
 // The player a dm_runscript call means: it may run on the module, not the player.
 object RgbCaller()
 {

@@ -76,6 +76,34 @@ class AtlasTest(unittest.TestCase):
         for line in ("mipmap 0", "filter 0", "downsamplemax 0"):
             self.assertIn(line, txi)
 
+    def test_a_compressed_palette_is_refused_by_name(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
+        for i, name in enumerate(PALETTES):
+            write_palette(tmp / f"pal_{name}01.tga", seed=i)
+        data = bytearray((tmp / "pal_cloth01.tga").read_bytes())
+        data[2] = 10
+        (tmp / "pal_cloth01.tga").write_bytes(bytes(data))
+        result = subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")],
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("pal_cloth01.tga", result.stderr)
+
+    def test_a_palette_with_an_id_field_reads_from_after_it(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        tmp = pathlib.Path(holder.name)
+        for i, name in enumerate(PALETTES):
+            write_palette(tmp / f"pal_{name}01.tga", seed=i * 40)
+        plain = stored_row(tmp / "pal_skin01.tga", 0)
+        data = bytearray((tmp / "pal_skin01.tga").read_bytes())
+        data[0] = 4
+        (tmp / "pal_skin01.tga").write_bytes(bytes(data[:18]) + b"abcd" + bytes(data[18:]))
+        subprocess.run([sys.executable, str(TOOL), str(tmp), "--out", str(tmp / "o")], check=True,
+                       capture_output=True)
+        self.assertEqual(stored_row(tmp / "o" / "rgb_atlas.tga", 0)[:256], plain)
+
     def test_every_part_material_binds_the_atlas(self):
         self.assertIn("texture8 rgb_atlas", rgb_materials.material("pmh0_chest001").splitlines())
 
